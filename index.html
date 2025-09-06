@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>TamaPWA — Single-file v20</title>
+<title>TamaPWA — Single-file v21</title>
 <link rel="manifest" href="manifest.json">
 <style>
-:root{--bg:#0d1117;--panel:#111827;--muted:#9aa0a6;--fg:#eaeaf0;--acc:#46b478;--bad:#b84d4d}
+:root{--bg:#0d1117;--panel:#111827;--muted:#9aa0a6;--fg:#eaeaf0;--acc:#46b478;--bad:#b84d4d;--chip:#1a1f2b}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
 main,header{max-width:980px;margin:0 auto;padding:12px}
@@ -15,13 +15,15 @@ h1{font-size:18px;margin:0}
 .badge{font-size:12px;color:var(--muted)}
 button{background:#19202c;color:var(--fg);border:1px solid #2b2f3a;border-radius:10px;padding:8px 12px;cursor:pointer}
 button.primary{outline:2px solid #2b2f3a}
-#pet{display:grid;place-items:center;height:320px;background:var(--panel);border-radius:14px;border:1px solid #2b2f3a}
-#petImg{width:192px;height:192px;image-rendering:pixelated}
+#pet{display:grid;place-items:center;height:320px;background:var(--panel);border-radius:14px;border:1px solid #2b2f3a;position:relative}
+#face{font-size:120px;line-height:1}
 #meta{color:var(--muted);font-size:12px}
 #stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
-.card{background:var(--panel);border:1px solid #2b2f3a;border-radius:12px;padding:6px}
+.card{background:var(--panel);border:1px solid #2b2f3a;border-radius:12px;padding:6px;position:relative;overflow:hidden}
 .bar{height:6px;background:#161b26;border-radius:12px;overflow:hidden}
 .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#7cf3a0)}
+.chip{position:absolute;right:6px;top:6px;background:var(--chip);border:1px solid #2b2f3a;border-radius:999px;padding:2px 8px;font-size:12px;opacity:0;transform:translateY(6px);transition:.35s}
+.chip.show{opacity:1;transform:translateY(0)}
 #toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:99999;pointer-events:none}
 .toast{pointer-events:auto;padding:8px 12px;border:1px solid #2b2f3a;background:#1a1c22;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.35);transition:.3s ease}
 dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(--fg);max-width:640px}
@@ -32,16 +34,12 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(
 .q1{ background:#d33; } .q2{ background:#3d3; } .q3{ background:#36f; } .q4{ background:#dd3; }
 .q.active{ filter:brightness(2); }
 .q.disabled{ opacity:.45; border-style:dashed; pointer-events:none }
-#seqBoard.symbols .q1{ background:#4a4a4a; }
-#seqBoard.symbols .q2{ background:#595959; }
-#seqBoard.symbols .q3{ background:#686868; }
-#seqBoard.symbols .q4{ background:#777777; }
+#seqBoard.symbols .q1{ background:#4a4a4a; } #seqBoard.symbols .q2{ background:#595959; }
+#seqBoard.symbols .q3{ background:#686868; } #seqBoard.symbols .q4{ background:#777777; }
 #seqBoard.symbols .q span{ color:#eaeaf0; font-size:48px; }
 /* Reflex */
 #reflexArea{position:relative;width:min(520px,95vw);height:220px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;display:grid;place-items:center;font-size:26px;font-weight:700;user-select:none;touch-action:manipulation}
-#reflexArea.ready{background:#202432}
-#reflexArea.go{background:#1f3d1f}
-#reflexArea.early{background:#3d1f1f}
+#reflexArea.ready{background:#202432} #reflexArea.go{background:#1f3d1f} #reflexArea.early{background:#3d1f1f}
 #reflexHUD{display:flex;justify-content:space-between;align-items:center;width:min(520px,95vw);margin:0 auto}
 /* Catch! */
 #catchArea{position:relative;width:min(520px,95vw);height:260px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;overflow:hidden;touch-action:manipulation}
@@ -52,7 +50,7 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(
 </head>
 <body>
 <header>
-  <h1>TamaPWA — Single-file <span class="badge">v20</span></h1>
+  <h1>TamaPWA — Single-file <span class="badge">v21</span></h1>
   <div class="right">
     <button id="feed">🍎 Nutri</button>
     <button id="catchBtn">🎯 Catch!</button>
@@ -69,14 +67,14 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(
 
 <main>
   <section id="pet">
-    <img id="petImg" alt="sprite" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='192' height='192'><rect width='100%' height='100%' fill='%23101826'/><rect x='56' y='52' width='80' height='96' rx='8' fill='%237cf3a0'/><circle cx='84' cy='88' r='6'/><circle cx='120' cy='88' r='6'/><rect x='96' y='110' width='28' height='8' fill='%23161b26'/></svg>"/>
+    <div id="face" aria-label="sprite">😐</div>
   </section>
-  <p id="meta">Età: <b id="age">0g</b> — Stadio: <b id="stage">Uovo</b> — Umore: <b id="mood">Curioso</b></p>
+  <p id="meta">Età: <b id="age">0g</b> — Stadio: <b id="stage">Uovo</b> — Umore: <b id="mood">Neutro</b></p>
   <div id="stats">
-    <div class="card"><div>Fame</div><div class="bar"><i id="bH" style="width:40%"></i></div></div>
-    <div class="card"><div>Felicità</div><div class="bar"><i id="bHa" style="width:50%"></i></div></div>
-    <div class="card"><div>Energia</div><div class="bar"><i id="bE" style="width:60%"></i></div></div>
-    <div class="card"><div>Pulizia</div><div class="bar"><i id="bC" style="width:60%"></i></div></div>
+    <div class="card"><div>Fame <span class="chip" id="chipH"></span></div><div class="bar"><i id="bH" style="width:40%"></i></div></div>
+    <div class="card"><div>Felicità <span class="chip" id="chipHa"></span></div><div class="bar"><i id="bHa" style="width:50%"></i></div></div>
+    <div class="card"><div>Energia <span class="chip" id="chipE"></span></div><div class="bar"><i id="bE" style="width:60%"></i></div></div>
+    <div class="card"><div>Pulizia <span class="chip" id="chipC"></span></div><div class="bar"><i id="bC" style="width:60%"></i></div></div>
     <div class="card"><div>Salute</div><div class="bar"><i id="bHe" style="width:80%"></i></div></div>
   </div>
   <div id="log"></div>
@@ -88,13 +86,10 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(
 <dialog id="gCatch">
   <h3>🎯 Catch!</h3>
   <p class="muted small">Clicca/tocca il bersaglio che si muove. Hai 20 secondi!</p>
-  <div id="catchArea">
-    <div id="target">+1</div>
-  </div>
+  <div id="catchArea"><div id="target">+1</div></div>
   <div id="catchHUD">
     <span>Punti: <b id="cPts">0</b></span>
     <span>Tempo: <b id="cTime">20</b>s</span>
-    <span id="cRew" style="color:#7cf3a0"></span>
     <button id="startCatch" class="primary">Start</button>
   </div>
   <form method="dialog"><button>Chiudi</button></form>
@@ -108,7 +103,6 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(
   <div id="reflexHUD">
     <span>Round: <b id="rRound">0</b>/5</span>
     <span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
-    <span id="rRew" style="color:#7cf3a0"></span>
     <button id="startReflex" class="primary">Start</button>
   </div>
   <form method="dialog"><button>Chiudi</button></form>
@@ -132,7 +126,6 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(
   <div id="seqHUD">
     <span>Round: <b id="seqRound">0</b></span>
     <span>Stato: <b id="seqStatus">—</b></span>
-    <span id="sRew" style="color:#7cf3a0"></span>
     <button id="startSequence" class="primary">Start</button>
   </div>
   <form method="dialog"><button>Chiudi</button></form>
@@ -140,9 +133,8 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(
 
 <script>
 const $=s=>document.querySelector(s);
-const logEl = $('#log');
+const logEl=$('#log'); const toastWrap=$('#toasts');
 function log(msg){ const t=new Date().toLocaleTimeString(); const p=document.createElement('div'); p.textContent=`[${t}] ${msg}`; logEl.prepend(p); while(logEl.children.length>6) logEl.lastChild.remove(); }
-const toastWrap=$('#toasts');
 function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; toastWrap.appendChild(el); setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(6px)';},1400); setTimeout(()=>el.remove(),1800); log(msg); }
 
 // State
@@ -157,9 +149,10 @@ function getCtx(){ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioCont
 function beep(freq=440,dur=120,type='square',vol=0.28){ if(!S.soundOn) return; const c=getCtx(); const o=c.createOscillator(), g=c.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=vol; o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+dur/1000); }
 ['pointerdown','touchstart','click','keydown'].forEach(ev=>window.addEventListener(ev,async()=>{ try{ const c=getCtx(); if(c.state==='suspended') await c.resume(); const b=c.createBuffer(1,1,22050); const s=c.createBufferSource(); s.buffer=b; s.connect(c.destination); s.start(0);}catch{} },{once:true,passive:true}));
 
-// Elements
-const petImg=$('#petImg'), ageEl=$('#age'), stageEl=$('#stage'), moodEl=$('#mood');
+// UI elems
+const face=$('#face'), moodEl=$('#mood');
 const bH=$('#bH'), bHa=$('#bHa'), bE=$('#bE'), bC=$('#bC'), bHe=$('#bHe');
+const chipH=$('#chipH'), chipHa=$('#chipHa'), chipE=$('#chipE'), chipC=$('#chipC');
 const feedBtn=$('#feed'), cleanBtn=$('#clean'), sleepBtn=$('#sleep'), soundBtn=$('#sound'), demoBtn=$('#demo'), installBtn=$('#install'), resetCacheBtn=$('#resetCache');
 const catchBtn=$('#catchBtn'), reflexBtn=$('#reflex'), seqBtn=$('#sequence');
 
@@ -169,12 +162,15 @@ demoBtn.onclick=()=>{ S.demo=!S.demo; demoBtn.textContent=S.demo?'⏱️ Demo: O
 installBtn.onclick=async()=>{ try{ await navigator.serviceWorker.register('service-worker.js'); toast('PWA installata/aggiornata'); }catch{ toast('Impossibile installare SW'); } };
 resetCacheBtn.onclick=async()=>{ try{ if('serviceWorker' in navigator){ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.unregister(); } } if('caches' in window){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } }catch{} localStorage.removeItem('tama'); location.reload(true); };
 
-feedBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.h=clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); beep(520); render(); save(); toast('🍎 Fame +28 / Pulizia -4'); };
-cleanBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.c=clamp(S.c+30,0,100); beep(760); render(); save(); toast('🧼 Pulizia +30'); };
-sleepBtn.onclick=()=>{ if(!S.sleep){S.sleep=true; toast('😴 Dorme');} else { S.sleep=false; toast('☀️ Sveglia'); } save(); render(); };
-
-function render(){ bH.style.width=S.h+'%'; bHa.style.width=S.ha+'%'; bE.style.width=S.e+'%'; bC.style.width=S.c+'%'; bHe.style.width=S.he+'%'; sleepBtn.textContent=S.sleep?'☀️ Sveglia':'😴 Dormi'; }
+function chip(el,emoji,txt){ el.textContent=`${emoji} ${txt}`; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1200); }
+function updateMood(){ let m='Neutro', f='😐'; if(S.sleep){m='Dorme'; f='😴';} else if(S.ha>=70 && S.e>=40){m='Felice'; f='🙂';} else if(S.ha<30 || S.e<25 || S.h<20){m='Triste'; f='😢';} face.textContent=f; moodEl.textContent=m; }
+function render(){ bH.style.width=S.h+'%'; bHa.style.width=S.ha+'%'; bE.style.width=S.e+'%'; bC.style.width=S.c+'%'; bHe.style.width=S.he+'%'; sleepBtn.textContent=S.sleep?'☀️ Sveglia':'😴 Dormi'; updateMood(); }
 render();
+
+// Actions
+feedBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.h=clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); chipH&&chip(chipH,'🍎','+28'); chipC&&chip(chipC,'🧼','-4'); beep(520); render(); save(); toast('🍎 Fame +28 / Pulizia -4'); };
+cleanBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.c=clamp(S.c+30,0,100); chipC&&chip(chipC,'🧼','+30'); beep(760); render(); save(); toast('🧼 Pulizia +30'); };
+sleepBtn.onclick=()=>{ if(!S.sleep){S.sleep=true; toast('😴 Dorme');} else { S.sleep=false; toast('☀️ Sveglia'); } save(); render(); };
 
 // Tick
 const DECAY={h:2,ha:1.5,e:2,c:1};
@@ -187,43 +183,43 @@ setInterval(()=>{
 },1000);
 
 // ===== CATCH! =====
-const dlgCatch=$('#gCatch'), startCatch=$('#startCatch'), catchArea=$('#catchArea'), target=$('#target'), cPtsEl=$('#cPts'), cTimeEl=$('#cTime'), cRew=$('#cRew');
+const dlgCatch=$('#gCatch'), startCatch=$('#startCatch'), catchArea=$('#catchArea'), target=$('#target'), cPtsEl=$('#cPts'), cTimeEl=$('#cTime');
 let cPts=0, cTime=20, vx=2.2, vy=1.8, playing=false, cTimer=null;
 catchBtn.onclick=()=>{ dlgCatch.showModal(); resetCatch(); };
-function resetCatch(){ cPts=0; cTime=20; vx=2.2; vy=1.8; cPtsEl.textContent='0'; cTimeEl.textContent='20'; cRew.textContent=''; target.style.left='10px'; target.style.top='10px'; playing=false; }
+function resetCatch(){ cPts=0; cTime=20; vx=2.2; vy=1.8; cPtsEl.textContent='0'; cTimeEl.textContent='20'; target.style.left='10px'; target.style.top='10px'; playing=false; }
 startCatch.onclick=()=>{ if(playing) return; playing=true; moveLoop(); timeLoop(); };
 function moveLoop(){ if(!playing) return; const maxX=catchArea.clientWidth-target.offsetWidth; const maxY=catchArea.clientHeight-target.offsetHeight; let nx=target.offsetLeft+vx, ny=target.offsetTop+vy; if(nx<0||nx>maxX){ vx*=-1; nx=Math.max(0,Math.min(maxX,nx)); } if(ny<0||ny>maxY){ vy*=-1; ny=Math.max(0,Math.min(maxY,ny)); } target.style.left=nx+'px'; target.style.top=ny+'px'; requestAnimationFrame(moveLoop); }
 function timeLoop(){ if(!playing) return; cTime--; cTimeEl.textContent=String(cTime); if(cTime<=0){ playing=false; endCatch(); } else { cTimer=setTimeout(timeLoop,1000); } }
 target.addEventListener('pointerdown',(e)=>{ if(!playing) return; e.preventDefault(); cPts++; cPtsEl.textContent=String(cPts); beep(700,80); target.textContent = (cPts%5==0)?'+2':'+1'; vx+= (vx>0? .22:-.22); vy+= (vy>0? .20:-.20); },{passive:false});
-function endCatch(){ const gain=Math.min(12, 2 + Math.floor(cPts/3)); const cost=4; const food=Math.min(6, Math.floor(cPts/4)); S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-cost,0,100); S.h=clamp(S.h+food,0,100); const best=(S.scores.catchBest||0); if(cPts>best){ S.scores.catchBest=cPts; toast('🏆 Record Catch: '+cPts); } save(); render(); const msg=`🎯 Catch: +Fel ${gain} / -En ${cost}` + (food? ` / +Fame ${food}`:''); cRew.textContent=msg.replace('🎯 ',''); toast(msg); beep(620,120); setTimeout(()=>beep(740,120),140); }
+function endCatch(){ const gain=Math.min(12, 2 + Math.floor(cPts/3)); const cost=4; const food=Math.min(6, Math.floor(cPts/4)); S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-cost,0,100); S.h=clamp(S.h+food,0,100); if(cPts>(S.scores.catchBest||0)){ S.scores.catchBest=cPts; toast('🏆 Record Catch: '+cPts); } save(); render(); chipHa&&chip(chipHa,'🙂','+'+gain); chipE&&chip(chipE,'⚡','-'+cost); if(food) chipH&&chip(chipH,'🍎','+'+food); toast('🎯 Catch: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food:'')); beep(620,120); setTimeout(()=>beep(740,120),140); }
 
 // ===== REFLEX =====
 const dlgReflex=$('#gReflex'), startReflex=$('#startReflex'), reflexArea=$('#reflexArea');
-const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest'), rRew=$('#rRew');
-reflexBtn.onclick=()=>{ dlgReflex.showModal(); reflexArea.className='ready'; reflexArea.textContent='Pronto…'; rRoundEl.textContent='0'; rTimeEl.textContent='—'; rBestEl.textContent=(S.scores.reflexBest==null?'—':S.scores.reflexBest); rRew.textContent=''; };
+const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest');
+reflexBtn.onclick=()=>{ dlgReflex.showModal(); reflexArea.className='ready'; reflexArea.textContent='Pronto…'; rRoundEl.textContent='0'; rTimeEl.textContent='—'; rBestEl.textContent=(S.scores.reflexBest==null?'—':S.scores.reflexBest); };
 let rRound=0, rBest=S.scores.reflexBest, rStart=0, rState='idle', rTimeout=null;
 startReflex.onclick=()=> startReflexGame();
 function startReflexGame(){ clearTimeout(rTimeout); rRound=0; rBest=S.scores.reflexBest; nextReflexRound(); }
 function nextReflexRound(){ rRound++; rRoundEl.textContent=String(rRound); if(rRound>5) return endReflexSeries(); rState='waiting'; reflexArea.className='ready'; reflexArea.textContent='Attendi…'; const delay=600+Math.random()*1800; rTimeout=setTimeout(()=>{ rState='go'; reflexArea.className='go'; reflexArea.textContent='GO! TAP!'; rStart=performance.now(); beep(800,90); },delay); }
-reflexArea.addEventListener('pointerdown',(ev)=>{ ev.preventDefault(); if(rState==='waiting'){ reflexArea.className='early'; reflexArea.textContent='Troppo presto!'; beep(200,160); S.ha=clamp(S.ha-1,0,100); save(); render(); clearTimeout(rTimeout); setTimeout(nextReflexRound,700); } else if(rState==='go'){ const t=Math.round(performance.now()-rStart); rState='scored'; rTimeEl.textContent=String(t); rBest=(rBest==null)?t:Math.min(rBest,t); const improved=(S.scores.reflexBest==null)||(rBest<S.scores.reflexBest); S.scores.reflexBest=rBest; const gain=t<=250?10:t<=350?7:t<=500?5:3; const food=gain>=7?3:gain>=5?2:1; S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-3,0,100); S.h=clamp(S.h+food,0,100); save(); render(); if(improved) toast('🏆 Record Reflex: '+rBest+' ms'); const msg=`⚡ Reflex: +Fel ${gain} / -En 3 / +Fame ${food}`; rRew.textContent=msg.replace('⚡ ',''); toast(msg); beep(620,120); setTimeout(()=>beep(740,120),140); setTimeout(nextReflexRound,700); } },{passive:false});
-function endReflexSeries(){ rState='idle'; reflexArea.className='ready'; reflexArea.textContent='Serie finita! Best: '+(rBest==null?'—':rBest+' ms'); }
+reflexArea.addEventListener('pointerdown',(ev)=>{ ev.preventDefault(); if(rState==='waiting'){ reflexArea.className='early'; reflexArea.textContent='Troppo presto!'; beep(200,160); S.ha=clamp(S.ha-1,0,100); chipHa&&chip(chipHa,'🙂','-1'); save(); render(); clearTimeout(rTimeout); setTimeout(nextReflexRound,700); } else if(rState==='go'){ const t=Math.round(performance.now()-rStart); rState='scored'; rTimeEl.textContent=String(t); rBest=(rBest==null)?t:Math.min(rBest,t); const improved=(S.scores.reflexBest==null)|| (rBest<S.scores.reflexBest); if(improved){ S.scores.reflexBest=rBest; toast('🏆 Record Reflex: '+rBest+' ms'); } const gain=Math.max(1, 6 - Math.min(5, Math.floor(t/80))); const food=Math.max(0, Math.floor((700-t)/200)); S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-3,0,100); S.h=clamp(S.h+food,0,100); chipHa&&chip(chipHa,'🙂','+'+gain); chipE&&chip(chipE,'⚡','-3'); if(food) chipH&&chip(chipH,'🍎','+'+food); save(); render(); toast('⚡ Reflex: +Fel '+gain+' / -En 3'+(food? ' / +Fame '+food:'')); setTimeout(nextReflexRound,600); } });
+function endReflexSeries(){ rState='idle'; reflexArea.className='ready'; reflexArea.textContent='Serie finita! Best: '+(S.scores.reflexBest==null?'—':S.scores.reflexBest+' ms'); }
 
 // ===== SEQUENCE =====
-const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound'), seqBoard=$('#seqBoard'), seqSymbols=$('#seqSymbols'), seqDebug=$('#seqDebug'), seqDebugStrip=$('#seqDebugStrip'), sRew=$('#sRew');
+const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound'), seqBoard=$('#seqBoard'), seqSymbols=$('#seqSymbols'), seqDebug=$('#seqDebug'), seqDebugStrip=$('#seqDebugStrip');
 seqBtn.onclick=()=>{ dlgSeq.showModal(); resetSeqUI(); updateSeqMode(); };
 function updateSeqMode(){ if(!seqBoard) return; if (seqSymbols && seqSymbols.checked){ seqBoard.classList.add('symbols'); const qs=seqBoard.querySelectorAll('.q'); qs[0].querySelector('span').textContent='▲'; qs[1].querySelector('span').textContent='◆'; qs[2].querySelector('span').textContent='●'; qs[3].querySelector('span').textContent='■'; } else { seqBoard.classList.remove('symbols'); seqBoard.querySelectorAll('.q').forEach(q=>q.querySelector('span').textContent='■'); } }
 if (seqSymbols) seqSymbols.addEventListener('change', updateSeqMode);
 let seqState='idle', seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
 function seqLog(){ if(!seqDebug) return; if(!seqDebug.checked){ seqDebugStrip.style.display='none'; return; } seqDebugStrip.style.display='block'; seqDebugStrip.textContent=`state=${seqState} | round=${seqRound} | idx=${seqIdx}/${seq.length} | seq=[${seq.join(',')}]`; }
-function resetSeqUI(){ clearTimeout(seqTimer); seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqInputOpen=false; seqRoundEl.textContent='0'; seqStatus.textContent='—'; sRew.textContent=''; setQDisabled(true); startSeq.disabled=false; seqLog(); }
+function resetSeqUI(){ clearTimeout(seqTimer); seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqInputOpen=false; seqRoundEl.textContent='0'; seqStatus.textContent='—'; setQDisabled(true); startSeq.disabled=false; seqLog(); }
 startSeq.onclick=()=> startSeqGame();
 function startSeqGame(){ resetSeqUI(); seqStatus.textContent='Guarda la sequenza'; nextSeqRound(); }
 function nextSeqRound(){ seqRound++; seqRoundEl.textContent=String(seqRound); seqIdx=0; seq.push(1+Math.random()*4|0); playSeq(); }
-function playSeq(){ seqState='playback'; setQDisabled(true); seqInputOpen=false; seqLog(); startSeq.disabled=true; let i=0; const step=()=>{ if(i>=seq.length){ seqState='input'; setQDisabled(false); seqIdx=0; seqLog(); seqStatus.textContent='Tocca in ordine (1/'+seq.length+')'; setTimeout(()=>{seqInputOpen=true;},80); startSeq.disabled=false; return; } const val=seq[i], el=seqBoard.querySelector(`.q[data-q="${val}"]`); el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),220); const tones=[440,520,660,780]; const symT=[330,440,554,659]; beep((seqSymbols&&seqSymbols.checked)?symT[val-1]:tones[val-1],160); i++; seqTimer=setTimeout(step,520); }; step(); }
+function playSeq(){ seqState='playback'; setQDisabled(true); seqInputOpen=false; seqLog(); startSeq.disabled=true; let i=0; const step=()=>{ if(i>=seq.length){ seqState='input'; setQDisabled(false); seqIdx=0; seqLog(); seqStatus.textContent='Tocca in ordine (1/'+seq.length+')'; setTimeout(()=>{seqInputOpen=true;},80); startSeq.disabled=false; return; } const val=seq[i], el=seqBoard.querySelector(`.q[data-q="${val}"]`); el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),220); const tone=[440,520,660,780][val-1]; const symT=[330,440,554,659][val-1]; beep((seqSymbols&&seqSymbols.checked)?symT:tone,140); i++; setTimeout(step,320); }; step(); }
 function setQDisabled(d){ seqBoard.querySelectorAll('.q').forEach(q=>q.classList.toggle('disabled',!!d)); }
 function colorName(v){ return (seqSymbols&&seqSymbols.checked)?({1:'▲',2:'◆',3:'●',4:'■'}[v]):({1:'rosso',2:'verde',3:'blu',4:'giallo'}[v]); }
 seqBoard.addEventListener('pointerup',(ev)=>{ const now=performance.now(); if(now-seqLastTs<120) return; seqLastTs=now; const btn=ev.target.closest('.q'); if(!btn) return; ev.preventDefault(); handleQ(Number(btn.dataset.q)); },{passive:false});
-function handleQ(val){ if(seqState!=='input'||!seqInputOpen){ seqLog(); return; } const expected=seq[seqIdx]; const el=seqBoard.querySelector(`.q[data-q="${val}"]`); el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),180); const tones=[440,520,660,780]; const symT=[330,440,554,659]; beep((seqSymbols&&seqSymbols.checked)?symT[val-1]:tones[val-1],140); if(val===expected){ seqIdx++; seqLog(); if(seqIdx<seq.length){ seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')'; } else { const gain=6, cost=3, food=Math.min(5, Math.floor(seq.length/2)); S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-cost,0,100); S.h=clamp(S.h+food,0,100); if(seqRound>(S.scores.sequenceBest||0)){ S.scores.sequenceBest=seqRound; toast('🏆 Record Sequence: Round '+seqRound+'!'); } save(); render(); const msg=`🟥🟩 Sequence: +Fel ${gain} / -En ${cost}` + (food? ` / +Fame ${food}`:''); sRew.textContent=msg.replace('🟥🟩 ',''); toast(msg); seqStatus.textContent='Bravo! Prossimo round...'; seqState='idle'; seqInputOpen=false; setQDisabled(true); setTimeout(nextSeqRound,650); } } else { const prog=seqIdx; const gain=Math.min(4, prog>>1); const food=prog>=2?1:0; if(gain>0) S.ha=clamp(S.ha+gain,0,100); if(food>0) S.h=clamp(S.h+food,0,100); save(); render(); const msg=`❌ Sequence: atteso ${colorName(expected)}, premuto ${colorName(val)} — +${gain>0?('Fel '+gain):'0'}${food? ' / +Fame '+food:''}`; sRew.textContent=msg; toast(msg); seqStatus.textContent='Errore! Round '+seqRound+' non completato.'; seqState='idle'; seqInputOpen=false; setQDisabled(true); beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240); } }
+function handleQ(val){ if(seqState!=='input'||!seqInputOpen){ seqLog(); return; } const expected=seq[seqIdx]; const el=seqBoard.querySelector(`.q[data-q="${val}"]`); el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),180); const tones=[440,520,660,780]; const symT=[330,440,554,659]; beep((seqSymbols&&seqSymbols.checked)?symT[val-1]:tones[val-1],140); if(val===expected){ seqIdx++; seqLog(); if(seqIdx<seq.length){ seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')'; } else { const gain=6, cost=3, food=Math.min(5, Math.floor(seq.length/2)); S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-cost,0,100); S.h=clamp(S.h+food,0,100); chipHa&&chip(chipHa,'🙂','+'+gain); chipE&&chip(chipE,'⚡','-'+cost); if(food) chipH&&chip(chipH,'🍎','+'+food); save(); render(); toast('🟥🟩 Sequence: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food:'')); nextSeqRound(); } } else { const gain=1, food=(seqIdx>=2)?1:0; S.ha=clamp(S.ha+gain,0,100); if(food) S.h=clamp(S.h+food,0,100); chipHa&&chip(chipHa,'🙂','+'+gain); if(food) chipH&&chip(chipH,'🍎','+'+food); save(); render(); toast('❌ Sequence: atteso '+colorName(expected)+', premuto '+colorName(val)+' — +' +gain+' Fel'+(food? ' / +Fame '+food:'') ); resetSeqUI(); } }
 </script>
 </body>
 </html>
