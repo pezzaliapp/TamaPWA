@@ -1,14 +1,14 @@
-# TamaPWA v4 (fix) — Sprite pixel‑art, Registro, Bonus/Malus
+# TamaPWA — Stable
+Questa build punta a **far funzionare subito** gioco ed evoluzione.
 
-- Sprite **pixel‑art** per variante (file `sprite-*.png`).
-- **Registro cura** con azioni (feed/play/clean, minuti sonno, energia spesa) e medie (pulizia/felicità).
-- **Bonus/Malus** per variante:
-  - *Sportivo*: +felicità col gioco, +costo energia
-  - *Goloso*: nutrire più efficace, ma sporca di più
-  - *Pulito*: pulire più efficace, +2 salute
-  - *Sognatore*: sonno rigenera più energia
-  - *Equilibrato*: decadimenti -10%, piccoli bonus
+## Cosa include
+- Minigioco **Catch!** funzionante (bersaglio che si sposta, punteggio, premio a fine partita).
+- **Evoluzione** per stadi con **Modalità Demo** (1 min = 1 giorno) per vedere subito *Uovo → Baby → Teen → Adult*.
+- PWA offline, reset, info.
 
-Carica tutto nella root della repo e apri `index.html` (o attiva GitHub Pages).
+## Uso
+- Tasto **⏱️ Demo** per attivare l’invecchiamento rapido.
+- **🎯 Gioca** → Start → clicca la stella che si sposta per 15s.
+- Premi **Reset** per ricominciare.
 
 MIT © 2025

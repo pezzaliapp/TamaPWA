@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>TamaPWA — Il tuo pet tascabile</title>
+  <title>TamaPWA — Stable</title>
   <meta name="theme-color" content="#222" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" />
@@ -12,17 +12,19 @@
 </head>
 <body>
   <header>
-    <h1>TamaPWA</h1>
+    <h1>TamaPWA — Stable</h1>
+    <div class="right">
+      <button id="demoBtn">⏱️ Demo: OFF</button>
+      <button id="installBtn" hidden>Installa</button>
+    </div>
   </header>
 
   <main>
     <section id="petCard">
       <div id="stageBadge">Uovo</div>
       <div id="pet" aria-live="polite" aria-label="Creatura virtuale">
-        <img id="petImg" alt="Sprite del pet" width="192" height="192" />
-        <div id="petSprite" class="sr-only">（・⊝・）</div>
+        <div id="petSprite">（・⊝・）</div>
       </div>
-      <div id="variantText" class="muted"></div>
       <div id="moodText">Umore: Curioso</div>
       <div id="ageText">Età: 0g</div>
       <div id="lastSeenText"></div>
@@ -37,63 +39,47 @@
     </section>
 
     <section id="actions">
-      <button data-act="feed"   class="primary">🍎 Nutri</button>
-      <button data-act="play">🎮 Gioca</button>
+      <button data-act="feed" class="primary">🍎 Nutri</button>
+      <button data-act="play">🎯 Gioca</button>
       <button data-act="sleep">😴 Dormi</button>
       <button data-act="clean">🧽 Pulisci</button>
-      <button id="infoBtn">❓ Come funziona</button>
-      <button id="toggleDash">📊 Registro</button>
+      <button id="infoBtn">❓ Info</button>
       <button id="resetBtn" class="danger">♻️ Reset</button>
     </section>
 
-    <section id="dashboard" hidden>
-      <h3>Registro cura</h3>
-      <div class="dash-grid">
-        <div class="card">
-          <h4>Azioni</h4>
-          <ul class="kv">
-            <li><span>Nutriti:</span><b id="mFeed">0</b></li>
-            <li><span>Giocato:</span><b id="mPlay">0</b></li>
-            <li><span>Pulito:</span><b id="mClean">0</b></li>
-            <li><span>Min di sonno:</span><b id="mSleep">0</b></li>
-            <li><span>Energia spesa nel gioco:</span><b id="mEnergySpent">0</b></li>
-          </ul>
-        </div>
-        <div class="card">
-          <h4>Medie</h4>
-          <ul class="kv">
-            <li><span>Pulizia media:</span><b id="avgClean">0</b></li>
-            <li><span>Felicità media:</span><b id="avgHappy">0</b></li>
-            <li><span>Ore tracciate:</span><b id="hoursTracked">0</b></li>
-          </ul>
-        </div>
-        <div class="card">
-          <h4>Variante</h4>
-          <p id="dashVariant">—</p>
-          <p class="muted small">La variante si assegna a Teen (g3) e si consolida ad Adult (g7) in base al tuo stile di cura.</p>
-        </div>
+    <!-- Catch game -->
+    <dialog id="gameDialog">
+      <h3>🎯 Catch! (15s)</h3>
+      <p class="muted small">Tocca il bersaglio che si sposta per fare punti.</p>
+      <div id="gameArea" tabindex="0" aria-label="Area di gioco"></div>
+      <div id="gameHUD">
+        <span>Punteggio: <b id="score">0</b></span>
+        <span>Tempo: <b id="time">15</b>s</span>
+        <button id="startGameBtn" class="primary">Start</button>
       </div>
-    </section>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
 
     <dialog id="howto">
-      <h2>Come funziona</h2>
-      <p>Sprite <b>pixel-art</b> per variante, <b>registro</b> azioni/medie e <b>bonus/malus</b> per ogni stile:</p>
+      <h2>Info</h2>
       <ul>
-        <li><b>Sportivo</b>: +felicità quando giochi, ma consuma più energia.</li>
-        <li><b>Goloso</b>: nutrire riempie di più ma sporca di più.</li>
-        <li><b>Pulito</b>: pulire è più efficace e dà un boost salute.</li>
-        <li><b>Sognatore</b>: dormendo rigenera più energia.</li>
-        <li><b>Equilibrato</b>: piccoli bonus generali e decadimenti ridotti.</li>
+        <li><b>Demo</b>: con il tasto “⏱️ Demo” 1 minuto = 1 giorno → evoluzione rapida.</li>
+        <li><b>Catch!</b>: fai punti cliccando il bersaglio; alla fine felicità +, energia -.</li>
+        <li>I bisogni calano anche quando non usi l’app.</li>
       </ul>
       <form method="dialog"><button>Chiudi</button></form>
     </dialog>
   </main>
 
   <footer>
-    <small>© 2025 TamaPWA — Open, semplice, senza cloud.</small>
+    <small>© 2025 TamaPWA — Stable build</small>
   </footer>
 
   <script src="script.js"></script>
-  <script> if ('serviceWorker' in navigator) { navigator.serviceWorker.register('service-worker.js'); } </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
 </body>
 </html>
