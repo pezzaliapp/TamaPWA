@@ -43,7 +43,7 @@
   }
 
   // ===== State =====
-  const stateKey='tama_pwa_plus';
+  const stateKey='tama_pwa_sprites';
   const initial=()=>({createdAt:Date.now(),last:Date.now(),age:0,stage:'egg',
     h:80,ha:80,e:80,c:80,he:100,sleep:false, soundOn:true,
     metrics:{feed:0,play:0,clean:0,sleepMin:0,energySpent:0,hours:0,cleanSum:0,happySum:0},
@@ -64,7 +64,7 @@
 
   // ===== DOM =====
   const $ = s=>document.querySelector(s);
-  const sprite = $('#sprite'), ageEl=$('#age'), stageEl=$('#stage'), moodEl=$('#mood'), variantEl=$('#variant');
+  const petImg = $('#petImg'), ageEl=$('#age'), stageEl=$('#stage'), moodEl=$('#mood'), variantEl=$('#variant');
   const bH=$('#bH'), bHa=$('#bHa'), bE=$('#bE'), bC=$('#bC'), bHe=$('#bHe');
   const demoBtn=$('#demo'), feedBtn=$('#feed'), playBtn=$('#play'), simonBtn=$('#simon'), sleepBtn=$('#sleep'), cleanBtn=$('#clean'), soundBtn=$('#sound'), resetBtn=$('#reset');
 
@@ -216,18 +216,16 @@
   }
 
   // ===== Render =====
+  const SPRITE = (variant, mood) => `sprite-${variant}-${mood}.png`;
   function render(first=false){
     bH.style.width=S.h+'%'; bHa.style.width=S.ha+'%'; bE.style.width=S.e+'%'; bC.style.width=S.c+'%'; bHe.style.width=S.he+'%';
     ageEl.textContent=S.age; stageEl.textContent=({egg:'Uovo',baby:'Baby',teen:'Teen',adult:'Adult'})[S.stage];
     const mood = getMood(); moodEl.textContent=mood.label;
+    const v = S.variant || 'equilibrato';
     variantEl.textContent = S.variant ? cap(S.variant) : '—';
-    if (!['★','💤','✨','🍎'].includes(sprite.textContent)){
-      const faces={egg:{happy:'(•͈⌣•͈)︎',ok:'（・⊝・）',sad:'(・へ・)',sick:'(×_×)'},
-                   baby:{happy:'(ᵔᴥᵔ)',ok:'(•ᴗ•)',sad:'(・_・;)',sick:'(×_×)'},
-                   teen:{happy:'(＾▽＾)',ok:'(・∀・)',sad:'(￣ヘ￣;)',sick:'(×_×)'},
-                   adult:{happy:'(＾‿＾)',ok:'(・‿・)',sad:'(；￣Д￣)',sick:'(×_×)'}}[S.stage];
-      sprite.textContent = faces[mood.code] || '(・‿・)';
-    }
+    const moodKey = S.sleep ? 'sleep' : mood.code;
+    petImg.src = SPRITE(v, moodKey);
+    petImg.alt = `Sprite ${cap(v)} — ${moodKey}`;
   }
   function getMood(){
     if (S.he < 25) return {code:'sick', label:'Malaticcio'};

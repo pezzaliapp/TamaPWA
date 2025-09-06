@@ -1,5 +1,5 @@
 {
-  "name": "TamaPWA — PWA con Auto-Update",
+  "name": "TamaPWA — PWA con Sprite",
   "short_name": "TamaPWA",
   "start_url": "./index.html",
   "scope": "./",

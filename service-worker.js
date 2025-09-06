@@ -1,5 +1,5 @@
-// Service Worker con auto-update (click-to-refresh)
-const CACHE = 'tama-pwa-auto-v1'; // BUMPA questa stringa a ogni release
+// Service Worker con auto-update, cache dinamica sprite
+const CACHE = 'tama-pwa-sprites-v1'; // bump ad ogni release
 const ASSETS = [
   './',
   './index.html',

@@ -1,4 +1,4 @@
-/* TamaPWA — PWA with auto-update */
+/* TamaPWA — PWA sprites */
 *{box-sizing:border-box}
 :root{--bg:#0e0f12;--card:#1a1c22;--ink:#eaeaf0;--muted:#9aa0a6;--accent:#7cf3a0;--barbg:#2a2d36}
 body{margin:0;font-family:system-ui,Segoe UI,Roboto,Inter,sans-serif;background:#0e0f12;color:var(--ink);min-height:100dvh;display:flex;flex-direction:column}
@@ -10,7 +10,7 @@ button{padding:10px 14px;border-radius:10px;border:1px solid #2b2f3a;background:
 button.primary{outline:2px solid #2d4}
 button.danger{border-color:#5c2430;background:#30171c;color:#ffb3bd}
 #pet{position:relative;display:grid;place-items:center;width:min(60vw,320px);aspect-ratio:1/1;margin:12px auto;background:#101826;border:1px solid #2b2f3a;border-radius:12px}
-#pet span{font-size:clamp(28px,10vw,56px)}
+#petImg{image-rendering:pixelated;width:180px;height:180px}
 #info{ text-align:center; margin:6px 0 12px }
 .muted{ color:#9aa0a6 } .small{ font-size:.9em }
 /* bars */

@@ -1,28 +1,12 @@
-# TamaPWA — PWA con Auto-Update
+# TamaPWA — PWA con Sprite pixel‑art
 
-Questa è la versione PWA della build che funziona, con:
-- varianti, due minigiochi (Catch! e Simon), suoni 8-bit, modalità demo;
-- **Service Worker** con **auto-update** (banner "Nuova versione disponibile — Aggiorna").
+Novità:
+- Sprite **pixel‑art** per ogni **variante** (sportivo, goloso, pulito, sognatore, equilibrato)
+  e per **umore** (felice/ok/triste/malaticcio) + **sleep**.
+- Tutto il resto come la PWA auto‑update (Catch!, Simon, suoni 8‑bit, Demo).
 
-## Deploy (GitHub Pages)
-1. Crea la repo (es. `TamaPWA`) e carica questi file nella **root**:
-   ```
-   index.html
-   style.css
-   script.js
-   manifest.json
-   service-worker.js
-   icon-192.png
-   icon-512.png
-   ```
-2. Attiva GitHub Pages su `main` / root.
-3. Apri la pagina. Alla prima visita cache offline pronta.
+## Deploy
+1. Carica i file nella root della repo (GitHub Pages).
+2. A ogni release bumpa `CACHE` in `service-worker.js` (es. `...-v2`).
+3. Le sprite sono servite e cache‑ate **dinamicamente** al primo use.
 
-## Aggiornamenti futuri
-- **Bumpare la costante `CACHE`** in `service-worker.js` (es. `...-v2` → `...-v3`).
-- Il banner apparirà quando la nuova versione è pronta; clic su **Aggiorna** per ricaricare l'app.
-
-## Modalità Demo
-- Bottone **⏱️ Demo**: ON = 1 minuto = 1 giorno per vedere subito le evoluzioni.
-
-MIT © 2025
