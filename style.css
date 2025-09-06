@@ -24,7 +24,7 @@ dialog{border:none;border-radius:16px;background:#11151f;color:#eaeaf0;padding:1
 dialog::backdrop{background:rgba(0,0,0,.6)}
 /* Catch game */
 #gameArea{margin:10px 0;width:min(520px,90vw);height:300px;border:1px dashed #2b2f3a;border-radius:10px;position:relative;background:#0f1320;overflow:hidden}
-.target{position:absolute;width:40px;height:40px;border-radius:50%;background:#7cf3a0;display:grid;place-items:center;user-select:none;cursor:pointer;font-weight:bold}
+.target{position:absolute;width:48px;height:48px;border-radius:50%;background:#7cf3a0;display:grid;place-items:center;user-select:none;cursor:pointer;font-weight:bold}
 /* Update toast */
 .update-bar{
   position: fixed; left: 50%; transform: translateX(-50%);
@@ -39,3 +39,6 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   background: #202432; color: #eaeaf0; cursor: pointer; font-weight: 600;
 }
 .update-bar button:active{ transform: translateY(1px); }
+
+.target{ touch-action: manipulation; }
+.target:active{ transform: scale(0.9); }

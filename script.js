@@ -199,15 +199,20 @@
   function spawnTarget(){
     const t = document.createElement('div');
     t.className='target'; t.textContent='★';
-    t.addEventListener('click', ()=>{ score++; scoreEl.textContent=String(score); moveTarget(true); });
+    t.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); score++; scoreEl.textContent=String(score); moveTarget(true); });
+    t.addEventListener('pointerdown', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); score++; scoreEl.textContent=String(score); moveTarget(true); });
     gameArea.appendChild(t);
     moveTarget(true);
   }
   function moveTarget(first=false){
     const t = gameArea.querySelector('.target'); if (!t) return;
     const gw = gameArea.clientWidth, gh = gameArea.clientHeight;
-    const x = Math.random()*(gw-40), y = Math.random()*(gh-40);
-    t.style.transform = `translate(${x}px, ${y}px)`;
+    const tw = t.offsetWidth, th = t.offsetHeight;
+    const x = Math.random()*(gw-tw), y = Math.random()*(gh-th);
+    t.style.left = x + 'px';
+    t.style.top  = y + 'px';
+    if (first && t.focus) t.focus();
+}px, ${y}px)`;
     if (first) t.focus?.();
   }
 
