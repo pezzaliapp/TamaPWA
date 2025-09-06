@@ -91,12 +91,9 @@
   resetBtn.onclick=()=>{ if(confirm('Reset?')){ S=initial(); save(); render(true);} };
 
   // Actions
-  feedBtn.onclick = ()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; } S.h = clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); S.metrics.feed++; beep(520); emote('🍎'); save(); render();
-updateNotifyBtn(); };
-  sleepBtn.onclick=()=>{ if(!S.sleep){ S.sleep=true; S.sleepStart=Date.now(); emote('💤'); } else { S.sleep=false; S.sleepStart=null; emote('☀️'); } save(); render();
-updateNotifyBtn(); };
-  cleanBtn.onclick= ()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; } S.c=clamp(S.c+30,0,100); S.metrics.clean++; beep(760); emote('✨'); save(); render();
-updateNotifyBtn(); };
+  feedBtn.onclick = ()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; } S.h = clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); S.metrics.feed++; beep(520); emote('🍎'); save(); render(); };
+  sleepBtn.onclick=()=>{ if(!S.sleep){ S.sleep=true; S.sleepStart=Date.now(); emote('💤'); } else { S.sleep=false; S.sleepStart=null; emote('☀️'); } save(); render(); };
+  cleanBtn.onclick= ()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; } S.c=clamp(S.c+30,0,100); S.metrics.clean++; beep(760); emote('✨'); save(); render(); };
 
   // ===== Catch game =====
   const dlgCatch = $('#gCatch'), area=$('#area'), startCatch=$('#startCatch'), ptsEl=$('#pts'), tEl=$('#t');
@@ -128,8 +125,7 @@ updateNotifyBtn(); };
     S.ha = clamp(S.ha + gain, 0, 100);
     S.e  = clamp(S.e - cost, 0, 100);
     S.metrics.play++; S.metrics.energySpent += cost;
-    save(); render();
-updateNotifyBtn(); beep(620,140); setTimeout(()=>beep(740,140),160); alert('Fine! Punteggio: '+pts+' — Felicità +'+gain+', Energia -'+cost);
+    save(); render(); beep(620,140); setTimeout(()=>beep(740,140),160); alert('Fine! Punteggio: '+pts+' — Felicità +'+gain+', Energia -'+cost);
   }
 
   
@@ -172,7 +168,6 @@ updateNotifyBtn(); beep(620,140); setTimeout(()=>beep(740,140),160); alert('Fine
       // penalizza leggermente
       S.ha = clamp(S.ha - 2, 0, 100);
       save(); render();
-updateNotifyBtn();
       clearTimeout(rTimeout);
       setTimeout(nextReflexRound, 700);
     } else if (rState==='go'){
@@ -187,7 +182,6 @@ updateNotifyBtn();
       S.ha = clamp(S.ha + gain, 0, 100);
       S.e  = clamp(S.e  - 3,   0, 100);
       save(); render();
-updateNotifyBtn();
       beep(620,120); setTimeout(()=>beep(740,120),140);
       setTimeout(nextReflexRound, 700);
     } else {
@@ -291,7 +285,6 @@ updateNotifyBtn();
         S.ha = clamp(S.ha + 6, 0, 100);
         S.e  = clamp(S.e - 3, 0, 100);
         save(); render();
-updateNotifyBtn();
         seqStatus.textContent='Bravo! Prossimo round...';
         seqState='idle'; seqInputOpen=false; setQDisabled(true);
         setTimeout(nextSeqRound, 650);
@@ -344,7 +337,6 @@ updateNotifyBtn();
     if(days!==S.age){ S.age=days; updateStageAndVariant(); }
 
     save(); render();
-updateNotifyBtn();
   }
 
   function updateStageAndVariant(){
@@ -416,48 +408,3 @@ updateNotifyBtn();
   render(true);
   ensureAudioUnlocked();
 })();
-// ===== Notifications (local) v28 =====
-async function askNotifyPermission(){
-  try{
-    if(!('Notification' in window)) return false;
-    if(Notification.permission === 'granted') return true;
-    if(Notification.permission === 'denied') return false;
-    const res = await Notification.requestPermission();
-    return res === 'granted';
-  }catch{ return false; }
-}
-function notifyNative(title, body){
-  try{
-    if(!('Notification' in window)) return;
-    if(Notification.permission!=='granted') return;
-    const opts = { body, icon: 'icon-192.png', badge: 'icon-192.png', vibrate: [80,40,80] };
-    const n = new Notification(title, opts);
-    setTimeout(()=>n.close(), 5000);
-  }catch{}
-}
-async function toggleNotify(){
-  const ok = await askNotifyPermission();
-  if(!ok){ toast('Concedi i permessi di notifica nelle impostazioni del browser'); S.notifyOn=false; }
-  else { S.notifyOn = !S.notifyOn; }
-  save(); updateNotifyBtn();
-  if(S.notifyOn){ toast('Avvisi attivati'); } else { toast('Avvisi disattivati'); }
-}
-function updateNotifyBtn(){
-  const btn = document.getElementById('notifyBtn');
-  if(!btn) return;
-  btn.textContent = S.notifyOn ? '🔔 Avvisi: ON' : '🔕 Avvisi: OFF';
-}
-function hungryCheckLoop(){
-  if(!S.lastHungryNotify) S.lastHungryNotify = 0;
-  const now = Date.now();
-  const THRESH = 25;
-  const COOL = 30*60*1000;
-  if(S.notifyOn && S.h < THRESH && !S.sleep){
-    if(now - S.lastHungryNotify > COOL){
-      notifyNative('Il tuo Tama ha fame!', 'Tocca 🍎 Nutri per farlo felice');
-      S.lastHungryNotify = now; save();
-    }
-  }
-}
-setInterval(hungryCheckLoop, 60000);
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') hungryCheckLoop(); });
