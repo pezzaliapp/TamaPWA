@@ -112,99 +112,69 @@
 
   
   
-  // ===== Simon game (robust input) =====
-  const dlgSimon=$('#gSimon'), startSimon=$('#startSimon'), statusEl=$('#status'), roundEl=$('#round');
-  const pads=Array.from(document.querySelectorAll('.pad'));
-  simonBtn.onclick=()=>{ dlgSimon.showModal(); };
+  
+  // ===== Reflex Tap game =====
+  const dlgReflex=$('#gReflex'), startReflex=$('#startReflex'), reflexArea=$('#reflexArea');
+  const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest');
+  const reflexBtn=$('#reflex');
+  reflexBtn.onclick=()=>{ dlgReflex.showModal(); };
 
-  let simState = 'idle'; // 'idle' | 'playback' | 'input'
-  let sequence=[], idx=0, round=0;
-  let playbackTimer=null;
-  let inputOpen=false;
-  let lastPressTs=0;
+  let rRound=0, rBest=null, rStart=0, rState='idle', rTimeout=null;
 
-  startSimon.onclick=()=> startSimonGame();
+  startReflex.onclick=()=> startReflexGame();
 
-  function startSimonGame(){
-    clearTimeout(playbackTimer);
-    sequence=[]; round=0; idx=0; inputOpen=false;
-    statusEl.textContent='Guarda la sequenza';
-    setPadsDisabled(true);
-    nextRound();
+  function startReflexGame(){
+    clearTimeout(rTimeout);
+    rRound=0; rBest=null;
+    rBestEl.textContent='—'; rTimeEl.textContent='—'; rRoundEl.textContent='0';
+    nextReflexRound();
   }
 
-  function nextRound(){
-    round++; roundEl.textContent=String(round);
-    idx=0; sequence.push(1 + Math.floor(Math.random()*4));
-    playSequence();
+  function nextReflexRound(){
+    rRound++; if (rRound>5){ endReflexSeries(); return; }
+    rRoundEl.textContent=String(rRound);
+    rState='waiting'; reflexArea.className='ready'; reflexArea.textContent='Attendi...';
+    const delay = 600 + Math.random()*1800;
+    rTimeout = setTimeout(()=>{
+      rState='go'; reflexArea.className='go'; reflexArea.textContent='GO! TAP!';
+      rStart = performance.now(); beep(800,90);
+    }, delay);
   }
 
-  function playSequence(){
-    simState='playback';
-    setPadsDisabled(true);
-    inputOpen=false;
-    let i=0;
-    const step = () => {
-      if (i >= sequence.length){
-        simState='input';
-        setPadsDisabled(false);
-        idx = 0;
-        statusEl.textContent = 'Tocca i pad in ordine (1/' + sequence.length + ')';
-        setTimeout(()=>{ inputOpen=true; }, 80); // mini delay per evitare race
-        return;
-      }
-      const val = sequence[i];
-      const el = pads[val-1];
-      flashPad(el);
-      beep([440,520,660,780][val-1], 180);
-      i++;
-      playbackTimer = setTimeout(step, 520);
-    };
-    step();
-  }
-
-  function setPadsDisabled(disabled){
-    pads.forEach(p=>{ p.classList.toggle('disabled', !!disabled); });
-  }
-
-  const colorName = (v)=>({1:'rosso',2:'verde',3:'blu',4:'giallo'})[v]||String(v);
-
-  pads.forEach(el=>{
-    el.addEventListener('pointerup', ev=>{
-      ev.preventDefault();
-      const now = performance.now();
-      if (now - lastPressTs < 120) return; // anti-doppio evento
-      lastPressTs = now;
-      const val = Number(el.dataset.pad);
-      handlePad(val);
-    }, {passive:false});
-  });
-
-  function handlePad(val){
-    if (simState !== 'input' || !inputOpen) return; // ignora se non in input
-    const expected = sequence[idx];
-    flashPad(pads[val-1]); beep([440,520,660,780][val-1], 90);
-    if (val === expected){
-      idx++;
-      if (idx < sequence.length){
-        statusEl.textContent = 'Tocca i pad in ordine ('+(idx+1)+'/'+sequence.length+')';
-      } else {
-        // completed round
-        S.ha = clamp(S.ha + 6, 0, 100);
-        S.e  = clamp(S.e - 3, 0, 100);
-        save(); render();
-        statusEl.textContent='Bravo! Prossimo round...';
-        simState='idle'; inputOpen=false;
-        setPadsDisabled(true);
-        setTimeout(nextRound, 650);
-      }
+  reflexArea.addEventListener('pointerdown', (ev)=>{
+    ev.preventDefault();
+    if (rState==='waiting'){
+      // false start
+      reflexArea.className='early'; reflexArea.textContent='Troppo presto!';
+      beep(200,160);
+      // penalizza leggermente
+      S.ha = clamp(S.ha - 2, 0, 100);
+      save(); render();
+      clearTimeout(rTimeout);
+      setTimeout(nextReflexRound, 700);
+    } else if (rState==='go'){
+      const t = Math.round(performance.now() - rStart);
+      rState='scored';
+      rTimeEl.textContent = String(t);
+      rBest = (rBest==null)? t : Math.min(rBest, t);
+      rBestEl.textContent = String(rBest);
+      reflexArea.className='ready'; reflexArea.textContent = t+' ms';
+      // ricompense: veloce = più felicità, costo energia fisso
+      const gain = t<=250? 10 : t<=350? 7 : t<=500? 5 : 3;
+      S.ha = clamp(S.ha + gain, 0, 100);
+      S.e  = clamp(S.e  - 3,   0, 100);
+      save(); render();
+      beep(620,120); setTimeout(()=>beep(740,120),140);
+      setTimeout(nextReflexRound, 700);
     } else {
-      // error
-      statusEl.textContent='Errore! Atteso: ' + colorName(expected) + ' — Hai premuto: ' + colorName(val);
-      simState='idle'; inputOpen=false;
-      setPadsDisabled(true);
-      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
+      // ignore in other states
     }
+  }, {passive:false});
+
+  function endReflexSeries(){
+    rState='idle'; reflexArea.className='ready';
+    reflexArea.textContent = 'Serie finita! Best: ' + (rBest==null?'—':rBest+' ms');
+    alert('Reflex finito! Best: ' + (rBest==null?'—':rBest+' ms'));
   }
 // ===== Loop / decay / variant logic =====
   const DECAY = {h:6, ha:4, e:5, c:3};

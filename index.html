@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
   <header>
@@ -23,7 +23,7 @@
     <div class="row">
       <button id="feed" class="primary">🍎 Nutri</button>
       <button id="play">🎯 Catch!</button>
-      <button id="simon">🟥🟩🟦🟨 Simon</button>
+      <button id="reflex">⚡ Reflex</button>
       <button id="sleep">😴 Dormi</button>
       <button id="clean">🧽 Pulisci</button>
       <button id="sound">🔊 Suoni: ON</button>
@@ -56,29 +56,27 @@
       <form method="dialog"><button>Chiudi</button></form>
     </dialog>
 
-    <!-- Simon -->
-    <dialog id="gSimon">
-      <h3>🟥🟩🟦🟨 Simon</h3>
-      <div id="simonBoard">
-        <button class="pad pad1" data-pad="1"></button>
-        <button class="pad pad2" data-pad="2"></button>
-        <button class="pad pad3" data-pad="3"></button>
-        <button class="pad pad4" data-pad="4"></button>
-      </div>
-      <div id="simonHUD">
-        <span>Round: <b id="round">0</b></span>
-        <span>Stato: <b id="status">—</b></span>
-        <button id="startSimon" class="primary">Start</button>
+    
+    <!-- Reflex -->
+    <dialog id="gReflex">
+      <h3>⚡ Reflex Tap</h3>
+      <p class="muted small">Premi START, aspetta <b>GO!</b> e tocca il pannello il più velocemente possibile.</p>
+      <div id="reflexArea" aria-label="Reflex area">Attendi...</div>
+      <div id="reflexHUD">
+        <span>Round: <b id="rRound">0</b>/5</span>
+        <span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
+        <button id="startReflex" class="primary">Start</button>
       </div>
       <form method="dialog"><button>Chiudi</button></form>
     </dialog>
+    
   </main>
 
   <footer>
     <small>© 2025 TamaPWA — PWA con sprite pixel‑art</small>
   </footer>
 
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
   <script>
     // Optional "Install" button handling
     const installBtn = document.getElementById('installBtn');
