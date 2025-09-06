@@ -3,131 +3,320 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>TamaPWA — Debug Min</title>
+<title>TamaPWA — Min+ (varianti, suoni, 2 giochi)</title>
 <style>
   *{box-sizing:border-box} body{font-family:system-ui,Segoe UI,Roboto,Inter,sans-serif;margin:0;background:#0e0f12;color:#eaeaf0}
-  main{width:min(900px,100%);margin:0 auto;padding:14px}
+  main{width:min(960px,100%);margin:0 auto;padding:14px}
   h1{font-size:18px;margin:10px 0}
-  #pet{position:relative;display:grid;place-items:center;width:min(60vw,320px);aspect-ratio:1/1;margin:12px auto;background:#101826;border:1px solid #2b2f3a;border-radius:12px}
-  #pet span{font-size:clamp(28px,10vw,56px)}
   .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
   button{padding:10px 14px;border-radius:10px;border:1px solid #2b2f3a;background:#202432;color:#eaeaf0;cursor:pointer;font-weight:600}
+  button.primary{outline:2px solid #2d4}
+  button.danger{border-color:#5c2430;background:#30171c;color:#ffb3bd}
+  #pet{position:relative;display:grid;place-items:center;width:min(60vw,320px);aspect-ratio:1/1;margin:12px auto;background:#101826;border:1px solid #2b2f3a;border-radius:12px}
+  #pet span{font-size:clamp(28px,10vw,56px)}
+  #info{ text-align:center; margin:6px 0 12px }
+  .muted{ color:#9aa0a6 } .small{ font-size:.9em }
+  /* bars */
+  #bars{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px auto;max-width:720px}
+  @media(min-width:720px){#bars{grid-template-columns:repeat(5,1fr)}}
+  .stat{background:#1a1c22;border:1px solid #2b2f3a;border-radius:10px;padding:8px}
+  .stat label{display:block;font-size:12px;color:#c9d1d9;margin-bottom:6px}
+  .bar{height:10px;background:#2a2d36;border-radius:999px;overflow:hidden}
+  .bar>div{height:100%;width:0%;background:linear-gradient(90deg,#3de0ad,#7cf3a0)}
   /* mini game area */
+  dialog{border:none;border-radius:14px;background:#11151f;color:#eaeaf0;padding:16px;width:min(580px,95vw)}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
   #area{position:relative;width:min(520px,95vw);height:320px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;overflow:hidden}
   .t{position:absolute;width:56px;height:56px;border-radius:50%;background:#7cf3a0;display:grid;place-items:center;font-weight:700;color:#0b1220;user-select:none;touch-action:manipulation}
   .t:active{transform:scale(.9)}
   #hud{display:flex;justify-content:space-between;align-items:center;width:min(520px,95vw);margin:0 auto}
+  /* simon */
+  #simonBoard{ display:grid; grid-template-columns: repeat(2,120px); grid-template-rows: repeat(2,120px); gap:12px; justify-content:center; margin: 12px 0; }
+  .pad{ width:120px; height:120px; border-radius:12px; border:2px solid #2b2f3a; opacity:.9; }
+  .pad1{ background:#d33; } .pad2{ background:#3d3; } .pad3{ background:#36f; } .pad4{ background:#dd3; }
+  .pad.active{ filter:brightness(2); opacity:1; }
+  #simonHUD{ display:flex; gap:12px; align-items:center; justify-content:space-between; }
 </style>
 </head>
 <body>
   <main>
-    <h1>TamaPWA — Debug Min</h1>
+    <h1>TamaPWA — Min+ (varianti, suoni, 2 giochi)</h1>
     <div class="row">
       <button id="demo">⏱️ Demo: OFF</button>
-      <button id="play">🎯 Gioca</button>
-      <button id="reset">♻️ Reset</button>
+      <button id="feed" class="primary">🍎 Nutri</button>
+      <button id="play">🎯 Catch!</button>
+      <button id="simon">🟥🟩🟦🟨 Simon</button>
+      <button id="sleep">😴 Dormi</button>
+      <button id="clean">🧽 Pulisci</button>
+      <button id="sound">🔊 Suoni: ON</button>
+      <button id="reset" class="danger">♻️ Reset</button>
     </div>
 
     <div id="pet"><span id="sprite">（・⊝・）</span></div>
-    <p id="info" style="text-align:center;margin:0 0 8px">Età: <b id="age">0</b>g — Umore: <b id="mood">Curioso</b> — Stadio: <b id="stage">Uovo</b></p>
+    <p id="info" class="muted small">
+      Età: <b id="age">0</b>g — Stadio: <b id="stage">Uovo</b> — Umore: <b id="mood">Curioso</b> — Variante: <b id="variant">—</b>
+    </p>
 
-    <div id="hud"><div>Punti: <b id="pts">0</b></div><div>Tempo: <b id="t">0</b>s</div></div>
-    <div id="area" aria-label="Area di gioco"></div>
+    <section id="bars">
+      <div class="stat"><label>Fame</label><div class="bar"><div id="bH"></div></div></div>
+      <div class="stat"><label>Felicità</label><div class="bar"><div id="bHa"></div></div></div>
+      <div class="stat"><label>Energia</label><div class="bar"><div id="bE"></div></div></div>
+      <div class="stat"><label>Pulizia</label><div class="bar"><div id="bC"></div></div></div>
+      <div class="stat"><label>Salute</label><div class="bar"><div id="bHe"></div></div></div>
+    </section>
+
+    <!-- Catch game -->
+    <dialog id="gCatch">
+      <h3>🎯 Catch! (15s)</h3>
+      <p class="muted small">Tocca la stella; si sposta ogni 600 ms.</p>
+      <div id="area" aria-label="Area di gioco"></div>
+      <div id="hud">
+        <span>Punteggio: <b id="pts">0</b></span>
+        <span>Tempo: <b id="t">15</b>s</span>
+        <button id="startCatch" class="primary">Start</button>
+      </div>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
+
+    <!-- Simon -->
+    <dialog id="gSimon">
+      <h3>🟥🟩🟦🟨 Simon</h3>
+      <div id="simonBoard">
+        <button class="pad pad1" data-pad="1"></button>
+        <button class="pad pad2" data-pad="2"></button>
+        <button class="pad pad3" data-pad="3"></button>
+        <button class="pad pad4" data-pad="4"></button>
+      </div>
+      <div id="simonHUD">
+        <span>Round: <b id="round">0</b></span>
+        <span>Stato: <b id="status">—</b></span>
+        <button id="startSimon" class="primary">Start</button>
+      </div>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
+
   </main>
 
 <script>
 (() => {
   'use strict';
-  const stateKey='tama_min_debug';
-  const initial=()=>({createdAt:Date.now(),last:Date.now(),age:0,stage:'egg',h:80,ha:80,e:80,c:80});
+  // ===== State =====
+  const stateKey='tama_min_plus';
+  const initial=()=>({createdAt:Date.now(),last:Date.now(),age:0,stage:'egg',
+    h:80,ha:80,e:80,c:80,he:100,sleep:false, soundOn:true,
+    metrics:{feed:0,play:0,clean:0,sleepMin:0,energySpent:0,hours:0,cleanSum:0,happySum:0},
+    variant:null
+  });
   let S=load();
 
-  const spriteEl = document.getElementById('sprite');
-  const ageEl = document.getElementById('age');
-  const stageEl = document.getElementById('stage');
-  const moodEl = document.getElementById('mood');
-  const demoBtn = document.getElementById('demo');
-  const resetBtn = document.getElementById('reset');
-  const playBtn = document.getElementById('play');
+  // ===== WebAudio (8-bit beeps) =====
+  let ctx=null; const getCtx=()=> ctx||(ctx=new (window.AudioContext||window.webkitAudioContext)());
+  function beep(freq=440, dur=120, type='square', vol=0.2){
+    if(!S.soundOn) return; try{
+      const c=getCtx(), o=c.createOscillator(), g=c.createGain();
+      o.type=type; o.frequency.value=freq; g.gain.value=vol;
+      o.connect(g); g.connect(c.destination); o.start();
+      setTimeout(()=>o.stop(), dur);
+    }catch{}
+  }
 
-  let demo=false; demoBtn.onclick=()=>{ demo=!demo; demoBtn.textContent= demo?'⏱️ Demo: ON':'⏱️ Demo: OFF'; };
+  // ===== DOM =====
+  const $ = s=>document.querySelector(s);
+  const sprite = $('#sprite'), ageEl=$('#age'), stageEl=$('#stage'), moodEl=$('#mood'), variantEl=$('#variant');
+  const bH=$('#bH'), bHa=$('#bHa'), bE=$('#bE'), bC=$('#bC'), bHe=$('#bHe');
+  const demoBtn=$('#demo'), feedBtn=$('#feed'), playBtn=$('#play'), simonBtn=$('#simon'), sleepBtn=$('#sleep'), cleanBtn=$('#clean'), soundBtn=$('#sound'), resetBtn=$('#reset');
+  demoBtn.onclick=()=>{ demo=!demo; demoBtn.textContent= demo?'⏱️ Demo: ON':'⏱️ Demo: OFF'; };
+  soundBtn.onclick=()=>{ S.soundOn=!S.soundOn; soundBtn.textContent=S.soundOn?'🔊 Suoni: ON':'🔈 Suoni: OFF'; save(); };
 
+  let demo=false;
   resetBtn.onclick=()=>{ if(confirm('Reset?')){ S=initial(); save(); render(true);} };
 
-  playBtn.onclick=()=> startGame();
+  // Actions
+  feedBtn.onclick = ()=>{ S.h = clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); S.metrics.feed++; beep(520); emote('🍎'); save(); render(); };
+  sleepBtn.onclick= ()=>{ S.sleep=true; beep(220); emote('💤'); save(); render(); };
+  cleanBtn.onclick= ()=>{ S.c=clamp(S.c+30,0,100); S.metrics.clean++; beep(760); emote('✨'); save(); render(); };
 
-  function tick(){
-    const now=Date.now(), dt=(now-S.last)/1000; if(dt<=0){S.last=now;return;}
-    const hoursPerDay = demo ? (1/60) : 24;
-    const days = Math.floor((now - S.createdAt)/3600000 / hoursPerDay);
-    if(days!==S.age){ S.age=days; updateStage(); }
-    S.last=now; save(); render();
-  }
-  setInterval(tick, 500);
-
-  function updateStage(){
-    if (S.age<1) S.stage='egg';
-    else if (S.age<3) S.stage='baby';
-    else if (S.age<7) S.stage='teen';
-    else S.stage='adult';
-  }
-
-  function render(first=false){
-    ageEl.textContent=S.age;
-    stageEl.textContent=({egg:'Uovo',baby:'Baby',teen:'Teen',adult:'Adult'})[S.stage];
-    const avg=(S.h+S.ha+S.e+S.c)/4; const mood=avg>=75?'Felice':avg>=45?'Curioso':'Triste';
-    moodEl.textContent=mood;
-    if (!['★','💤','✨','🍎'].includes(spriteEl.textContent)){
-      const faces={egg:{happy:'(•͈⌣•͈)︎',ok:'（・⊝・）',sad:'(・へ・)'},baby:{happy:'(ᵔᴥᵔ)',ok:'(•ᴗ•)',sad:'(・_・;)'},teen:{happy:'(＾▽＾)',ok:'(・∀・)',sad:'(￣ヘ￣;)'},adult:{happy:'(＾‿＾)',ok:'(・‿・)',sad:'(；￣Д￣)'}}[S.stage];
-      spriteEl.textContent=faces[mood==='Felice'?'happy':mood==='Curioso'?'ok':'sad']||'(・‿・)';
-    }
-  }
-
-  function save(){ localStorage.setItem(stateKey, JSON.stringify(S)); }
-  function load(){ try{ const r=localStorage.getItem(stateKey); return r?Object.assign(initial(), JSON.parse(r)):initial(); }catch{ return initial(); } }
-
-  // --------- Minimal Catch game (works everywhere) ---------
-  const area = document.getElementById('area');
-  const ptsEl = document.getElementById('pts');
-  const tEl = document.getElementById('t');
-  let timer=null, mover=null, left=0, topv=0, pts=0, time=0;
+  // ===== Catch game =====
+  const dlgCatch = $('#gCatch'), area=$('#area'), startCatch=$('#startCatch'), ptsEl=$('#pts'), tEl=$('#t');
+  playBtn.onclick=()=>{ openCatch(); };
+  let timer=null, mover=null, pts=0, time=15;
+  function openCatch(){ pts=0; time=15; ptsEl.textContent=pts; tEl.textContent=time; area.innerHTML=''; dlgCatch.showModal(); }
+  startCatch.onclick=()=> startGame();
   function startGame(){
-    // clear old
     clearInterval(timer); clearInterval(mover); area.innerHTML='';
     pts=0; time=15; ptsEl.textContent=pts; tEl.textContent=time;
-    const target=document.createElement('div');
-    target.className='t'; target.textContent='★';
-    target.style.left='0px'; target.style.top='0px';
-    // robust hit handler
-    const hit=()=>{ pts++; ptsEl.textContent=pts; move(true); };
-    target.addEventListener('pointerdown', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); hit(); });
-    target.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); hit(); });
-    area.appendChild(target);
-    move(true);
-
+    const t=document.createElement('div'); t.className='t'; t.textContent='★'; t.style.left='0px'; t.style.top='0px';
+    const hit=()=>{ pts++; ptsEl.textContent=String(pts); beep(880,90); move(true); };
+    t.addEventListener('pointerdown', ev=>{ ev.preventDefault(); ev.stopPropagation(); hit(); });
+    t.addEventListener('click', ev=>{ ev.preventDefault(); ev.stopPropagation(); hit(); });
+    area.appendChild(t); move(true);
     mover=setInterval(()=>move(false), 600);
-    timer=setInterval(()=>{
-      time--; tEl.textContent=time;
-      if(time<=0){ clearInterval(timer); clearInterval(mover); end(); }
-    }, 1000);
+    timer=setInterval(()=>{ time--; tEl.textContent=time; if(time<=0){ endGame(); } }, 1000);
   }
   function move(first){
     const t = area.querySelector('.t'); if(!t) return;
-    const gw = area.clientWidth, gh = area.clientHeight;
-    const tw = t.offsetWidth, th = t.offsetHeight;
-    left = Math.random()*(gw-tw);
-    topv = Math.random()*(gh-th);
-    t.style.left = left+'px';
-    t.style.top  = topv+'px';
-    if(first && t.focus) t.focus();
+    const gw = area.clientWidth, gh = area.clientHeight, tw=t.offsetWidth, th=t.offsetHeight;
+    const x = Math.random()*(gw-tw), y = Math.random()*(gh-th);
+    t.style.left = x+'px'; t.style.top = y+'px'; if(first&&t.focus) t.focus();
   }
-  function end(){
-    alert('Fine! Punteggio: '+pts);
-    // Ricompensa semplice
-    S.ha = Math.min(100, S.ha + Math.min(5 + pts*2, 40));
-    S.e  = Math.max(0,    S.e  - Math.max(2, Math.floor(pts/2)));
+  function endGame(){
+    clearInterval(timer); clearInterval(mover);
+    const gain = Math.min(5 + pts*2, 40);
+    const cost = Math.max(2, Math.floor(pts/2));
+    S.ha = clamp(S.ha + gain, 0, 100);
+    S.e  = clamp(S.e - cost, 0, 100);
+    S.metrics.play++; S.metrics.energySpent += cost;
+    save(); render(); beep(620,140); setTimeout(()=>beep(740,140),160); alert('Fine! Punteggio: '+pts+' — Felicità +'+gain+', Energia -'+cost);
+  }
+
+  // ===== Simon game =====
+  const dlgSimon=$('#gSimon'), startSimon=$('#startSimon'), statusEl=$('#status'), roundEl=$('#round');
+  const pads=Array.from(document.querySelectorAll('.pad'));
+  simonBtn.onclick=()=>{ dlgSimon.showModal(); };
+  let sequence=[], userIdx=0, playing=false, round=0;
+  startSimon.onclick=()=> startSimonGame();
+  function startSimonGame(){
+    sequence=[]; round=0; statusEl.textContent='Guarda la sequenza'; nextRound();
+  }
+  function nextRound(){
+    round++; roundEl.textContent=String(round); userIdx=0; sequence.push(1+Math.floor(Math.random()*4));
+    playSequence(0);
+  }
+  function playSequence(i){
+    playing=true; if(i>=sequence.length){ playing=false; statusEl.textContent='Tocca i pad in ordine'; return; }
+    const padVal=sequence[i]; const el=pads[padVal-1];
+    flashPad(el); beep([440,520,660,780][padVal-1], 180);
+    setTimeout(()=>playSequence(i+1), 360);
+  }
+  function flashPad(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
+  pads.forEach(el=>{
+    el.addEventListener('pointerdown', ev=>{ ev.preventDefault(); padPress(Number(el.dataset.pad)); });
+    el.addEventListener('click', ev=>{ ev.preventDefault(); padPress(Number(el.dataset.pad)); });
+  });
+  function padPress(val){
+    if(playing) return; // ignore during playback
+    const expected = sequence[userIdx];
+    flashPad(pads[val-1]); beep([440,520,660,780][val-1], 120);
+    if(val===expected){
+      userIdx++;
+      if(userIdx===sequence.length){
+        // round complete
+        S.ha = clamp(S.ha + 6, 0, 100);
+        S.e  = clamp(S.e - 3, 0, 100);
+        save(); render();
+        statusEl.textContent='Bravo! Prossimo round...';
+        setTimeout(nextRound, 600);
+      }
+    }else{
+      statusEl.textContent='Errore! Fine partita.';
+      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
+    }
+  }
+
+  // ===== Loop / decay / variant logic =====
+  const DECAY = {h:6, ha:4, e:5, c:3};
+  const HEALTH_REGEN=2, HEALTH_DECAY=6;
+  setInterval(tick, 500);
+  function tick(){
+    const now=Date.now(), dt=(now-S.last)/1000; if(dt<=0){S.last=now;return;}
+    const dh = dt/3600;
+    if(!S.sleep){
+      S.h = clamp(S.h - DECAY.h*dh, 0, 100);
+      S.ha= clamp(S.ha- DECAY.ha*dh,0,100);
+      S.e = clamp(S.e - DECAY.e*dh, 0, 100);
+      S.c = clamp(S.c - DECAY.c*dh, 0, 100);
+    }else{
+      // sleep regen
+      S.e = clamp(S.e + 12*dh, 0, 100);
+      S.h = clamp(S.h - 2*dh, 0, 100);
+      S.ha= clamp(S.ha- 1*dh, 0, 100);
+      S.c = clamp(S.c - 1*dh, 0, 100);
+      S.metrics.sleepMin += dh*60;
+      if(S.e>=95) S.sleep=false;
+    }
+    // averages for variant
+    S.metrics.hours += dh;
+    S.metrics.cleanSum += S.c*dh;
+    S.metrics.happySum += S.ha*dh;
+
+    // health
+    const low=(S.h<35)||(S.ha<35)||(S.e<35)||(S.c<35);
+    const good=(S.h>60)&&(S.ha>60)&&(S.e>60)&&(S.c>60);
+    if(good) S.he = clamp(S.he + HEALTH_REGEN*dh, 0, 100);
+    else if(low) S.he = clamp(S.he - HEALTH_DECAY*dh, 0, 100);
+
+    // age & variant milestones
+    const hoursPerDay = demo ? (1/60) : 24;
+    const days = Math.floor(((now - S.createdAt)/3600000) / hoursPerDay);
+    if(days!==S.age){ S.age=days; updateStageAndVariant(); }
+
     save(); render();
   }
+
+  function updateStageAndVariant(){
+    if (S.age<1) S.stage='egg';
+    else if (S.age<3) S.stage='baby';
+    else if (S.age<7){ // teen
+      if (S.stage!=='teen'){ S.stage='teen'; if(!S.variant) S.variant = chooseVariant(false); }
+    } else { // adult
+      if (S.stage!=='adult'){ S.stage='adult'; S.variant = chooseVariant(true); }
+    }
+  }
+
+  function chooseVariant(consolidate){
+    const hours = Math.max(0.0001, S.metrics.hours);
+    const avgClean = S.metrics.cleanSum / hours;
+    const avgHappy = S.metrics.happySum / hours;
+    const score = {
+      sportivo:  S.metrics.play*2 + S.metrics.energySpent*0.8 + (avgHappy>70?2:0),
+      goloso:    S.metrics.feed*2 + Math.max(0,70-avgClean)*0.3,
+      pulito:    S.metrics.clean*2 + avgClean*0.4,
+      sognatore: (S.metrics.sleepMin/30),
+      equilibrato: (avgHappy>65?8:0) + (Math.abs(avgClean-60)<10?4:0)
+    };
+    if(consolidate && S.variant && score[S.variant]!=null) score[S.variant]+=3;
+    let best='equilibrato', bestVal=-Infinity; for(const k in score){ if(score[k]>bestVal){bestVal=score[k];best=k;} }
+    return best;
+  }
+
+  // ===== Render =====
+  function render(first=false){
+    bH.style.width=S.h+'%'; bHa.style.width=S.ha+'%'; bE.style.width=S.e+'%'; bC.style.width=S.c+'%'; bHe.style.width=S.he+'%';
+    ageEl.textContent=S.age; stageEl.textContent=({egg:'Uovo',baby:'Baby',teen:'Teen',adult:'Adult'})[S.stage];
+    const mood = getMood(); moodEl.textContent=mood.label;
+    variantEl.textContent = S.variant ? cap(S.variant) : '—';
+    if (!['★','💤','✨','🍎'].includes(sprite.textContent)){
+      const faces={egg:{happy:'(•͈⌣•͈)︎',ok:'（・⊝・）',sad:'(・へ・)',sick:'(×_×)'},
+                   baby:{happy:'(ᵔᴥᵔ)',ok:'(•ᴗ•)',sad:'(・_・;)',sick:'(×_×)'},
+                   teen:{happy:'(＾▽＾)',ok:'(・∀・)',sad:'(￣ヘ￣;)',sick:'(×_×)'},
+                   adult:{happy:'(＾‿＾)',ok:'(・‿・)',sad:'(；￣Д￣)',sick:'(×_×)'}}[S.stage];
+      sprite.textContent = faces[mood.code] || '(・‿・)';
+    }
+  }
+  function getMood(){
+    if (S.he < 25) return {code:'sick', label:'Malaticcio'};
+    const avg=(S.h+S.ha+S.e+S.c)/4;
+    if (avg>=75) return {code:'happy', label:'Felice'};
+    if (avg>=45) return {code:'ok', label:'Curioso'};
+    return {code:'sad', label:'Triste'};
+  }
+  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+  // ===== Utils =====
+  function emote(symbol){
+    const pet = document.getElementById('pet');
+    const b = document.createElement('div');
+    b.textContent = symbol;
+    b.style.position='absolute'; b.style.top='6px'; b.style.right='8px';
+    b.style.fontSize='28px'; b.style.filter='drop-shadow(0 2px 2px rgba(0,0,0,.6))';
+    b.style.transition='transform .7s ease, opacity .7s ease'; b.style.opacity='1';
+    pet.appendChild(b);
+    requestAnimationFrame(()=>{ b.style.transform='translateY(-14px)'; b.style.opacity='0'; });
+    setTimeout(()=> b.remove(), 800);
+  }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+  function save(){ localStorage.setItem(stateKey, JSON.stringify(S)); }
+  function load(){ try{ const r=localStorage.getItem(stateKey); return r?Object.assign(initial(), JSON.parse(r)):initial(); }catch{ return initial(); } }
 
   // first paint
   render(true);
