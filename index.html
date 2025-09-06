@@ -76,8 +76,20 @@
       <p class="muted small">
         Guarda la sequenza e ripetila <b>nell’ordine</b>. Puoi passare ai <b>simboli</b> se preferisci.
       </p>
-      <div id="seqModeWrap" class="muted small" style="display:flex;gap:10px;justify-content:flex-end;">
+      <div id="seqModeWrap" class="muted small" style="display:flex;gap:10px;justify-content:space-between;align-items:center;">
         <label><input type="checkbox" id="seqSymbols"> Simboli</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+        <label>Velocità: 
+          <select id="seqSpeed">
+            <option value="easy" selected>Lenta</option>
+            <option value="normal">Normale</option>
+            <option value="hard">Veloce</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="seqTeach" checked> Modalità didattica</label>
+        <button id="seqReplay" title="Rivedi sequenza">Rivedi</button>
+      </div>
+      <div id="seqStrip" class="muted small" style="display:flex;gap:6px;justify-content:center;margin-top:6px;"></div>
       </div>
       <div id="seqBoard">
         <button class="q q1" data-q="1"><span>■</span></button>
@@ -87,7 +99,7 @@
       </div>
       <div id="seqHUD">
         <span>Round: <b id="seqRound">0</b></span>
-        <span>Stato: <b id="seqStatus">—</b></span>
+        <span>Stato: <b id="seqStatus">—</b> · <span id="seqHelp" class="muted small"></span></span>
         <button id="startSequence" class="primary">Start</button>
       </div>
       <form method="dialog"><button>Chiudi</button></form>

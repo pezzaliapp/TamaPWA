@@ -198,74 +198,76 @@
   // ===== Sequence (Simon-like) =====
   const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
   const seqBtn=$('#sequence'), seqBoard=document.getElementById('seqBoard'); const seqSymbols=$('#seqSymbols');
+  const seqSpeedSel=$('#seqSpeed'), seqTeach=$('#seqTeach'), seqHelp=$('#seqHelp'), seqStrip=$('#seqStrip'), seqReplay=$('#seqReplay');
   const qs = Array.from(document.querySelectorAll('#seqBoard .q'));
-  // Toggle symbols mode
-  function updateSeqMode(){
-    if(!seqBoard) return;
-    if (seqSymbols.checked){
+
+  function updateSeqMode(){ if(!seqBoard) return;
+    if (seqSymbols && seqSymbols.checked){
       seqBoard.classList.add('symbols');
-      // set distinct glyphs
       qs[0].querySelector('span').textContent='▲';
       qs[1].querySelector('span').textContent='◆';
       qs[2].querySelector('span').textContent='●';
       qs[3].querySelector('span').textContent='■';
     } else {
       seqBoard.classList.remove('symbols');
-      // clear or set faint squares
       qs.forEach(q=>{ q.querySelector('span').textContent='■'; });
     }
   }
-  // apply on open and on toggle
-  if (seqSymbols) {
-    seqSymbols.addEventListener('change', updateSeqMode);
-    updateSeqMode();
-  }
+  if (seqSymbols) seqSymbols.addEventListener('change', updateSeqMode);
+  seqBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgSeq.showModal(); updateSeqMode(); };
 
-  seqBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgSeq.showModal(); };
-
-  let seqState='idle'; // 'idle' | 'playback' | 'input'
-  let seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
+  let seqState='idle', seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0, replayLeft=3;
 
   startSeq.onclick=()=> startSeqGame();
+  if (seqReplay) seqReplay.onclick=()=>{ if(seqState==='input' && replayLeft>0){ replayLeft--; playSeq(true); showHelp(`Rivedi sequenza (${replayLeft} rimaste)`);} };
 
   function startSeqGame(){
-    clearTimeout(seqTimer);
+    clearTimeout(seqTimer); replayLeft=3;
     seq=[]; seqRound=0; seqIdx=0; seqInputOpen=false;
-    seqStatus.textContent='Guarda la sequenza';
-    setQDisabled(true);
-    nextSeqRound();
+    seqStatus.textContent='Pronti…'; showHelp('Conta alla rovescia');
+    setQDisabled(true); drawStrip();
+    countdown(()=>{ nextSeqRound(); });
   }
+  function countdown(done){ let n=3; const id=setInterval(()=>{ seqStatus.textContent='Partenza: '+n; tick(); n--; if(n<0){ clearInterval(id); good(); done(); } }, 500); }
+
   function nextSeqRound(){
     seqRound++; seqRoundEl.textContent=String(seqRound);
-    seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
-    playSeq();
+    seqIdx=0; seq.push(1+Math.floor(Math.random()*4)); drawStrip();
+    seqStatus.textContent='Guarda la sequenza'; showHelp('');
+    playSeq(false);
   }
-  function playSeq(){
+
+  function stepDur(){ const v=seqSpeedSel?seqSpeedSel.value:'normal'; const teach=seqTeach?seqTeach.checked:true;
+    const base = v==='easy'?650 : v==='hard'?380 : 500;
+    return teach? base+150 : base;
+  }
+  function pauseDur(){ const v=seqSpeedSel?seqSpeedSel.value:'normal'; const teach=seqTeach?seqTeach.checked:true;
+    const base = v==='easy'?260 : v==='hard'?160 : 220;
+    return teach? base+120 : base;
+  }
+
+  function playSeq(isReplay){
     seqState='playback'; setQDisabled(true); seqInputOpen=false;
-    let i=0;
-    const step = () => {
+    const dur=stepDur(), gap=pauseDur(); let i=0;
+    setActiveDot(0);
+    const step=()=>{
       if(i>=seq.length){
-        seqState='input'; setQDisabled(false); seqIdx=0; seqStatus.textContent='Tocca in ordine (1/'+seq.length+')';
-        setTimeout(()=>{ seqInputOpen=true; }, 80);
+        seqState='input'; setQDisabled(false); seqIdx=0; seqInputOpen=true;
+        seqStatus.textContent='Ripeti nell’ordine (1/'+seq.length+')'; showHelp('Atteso: '+label(seq[0]));
         return;
       }
-      const val=seq[i], el=qs[val-1];
-      flashQ(el); playQSound(val, seqSymbols.checked);
-      i++; seqTimer=setTimeout(step, 520);
+      const v=seq[i], el=qs[v-1]; el.classList.add('active'); tick(); setTimeout(()=>{
+        el.classList.remove('active'); i++; setActiveDot(i); seqTimer=setTimeout(step, gap);
+      }, dur);
     }; step();
   }
+
   function setQDisabled(b){ qs.forEach(q=>q.classList.toggle('disabled', !!b)); }
-  function flashQ(el){
-    el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220);
-  }
-  function playQSound(val, symbols){
-    if(symbols){
-      // per i simboli, facciamo una scala diversa
-      beep([330,440,554,659][val-1], 160);
-    } else {
-      beep([440,520,660,780][val-1], 160);
-    }
-  }
+  function showHelp(text){ if(seqHelp) seqHelp.textContent=text; }
+  function drawStrip(){ if(!seqStrip) return; seqStrip.innerHTML=''; seq.forEach(v=>{ const d=document.createElement('div'); d.className='dot'; d.style.cssText='width:18px;height:18px;border-radius:4px;opacity:.6;margin:2px;'; d.style.background=(v==1?'#d33':v==2?'#3d3':v==3?'#36f':'#dd3'); seqStrip.appendChild(d); }); setActiveDot(0); }
+  function setActiveDot(i){ if(!seqStrip) return; [...seqStrip.children].forEach((d,k)=>{ d.style.outline = (k===i)?'2px solid #eaeaf0':'none'; d.style.opacity = (k<=i)? '1' : '.6'; }); }
+  function label(v){ if (seqSymbols && seqSymbols.checked){ return {{1:'▲',2:'◆',3:'●',4:'■'}[v]}; } return {{1:'rosso',2:'verde',3:'blu',4:'giallo'}[v]}; }
+
   qs.forEach(el=>{
     el.addEventListener('pointerup', (ev)=>{
       ev.preventDefault();
@@ -273,29 +275,38 @@
       const val=Number(el.dataset.q); handleQ(val);
     }, {passive:false});
   });
+
   function handleQ(val){
     if(seqState!=='input' || !seqInputOpen) return;
     const expected = seq[seqIdx];
-    flashQ(qs[val-1]); playQSound(val, seqSymbols.checked);
+    flashQ(qs[val-1]); playQSound(val, seqSymbols && seqSymbols.checked);
     if(val===expected){
-      seqIdx++;
+      good();
+      seqIdx++; setActiveDot(seqIdx);
       if(seqIdx<seq.length){
-        seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')';
+        seqStatus.textContent='Ripeti nell’ordine ('+(seqIdx+1)+'/'+seq.length+')';
+        showHelp('Atteso: '+label(seq[seqIdx]));
       } else {
-        S.ha = clamp(S.ha + 6, 0, 100);
-        S.e  = clamp(S.e - 3, 0, 100);
-        save(); render();
-        seqStatus.textContent='Bravo! Prossimo round...';
-        seqState='idle'; seqInputOpen=false; setQDisabled(true);
-        setTimeout(nextSeqRound, 650);
+        const gain=6, cost=3, food=Math.min(5, Math.floor(seq.length/2));
+        S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-cost,0,100); S.h=clamp(S.h+food,0,100);
+        save(); render(); fanfare();
+        alert('Sequence round '+seqRound+' OK — Felicità +'+gain+' / Energia -'+cost+(food?(' / Fame +'+food):''));
+        nextSeqRound();
       }
     } else {
-      seqStatus.textContent='Errore!';
-      seqState='idle'; seqInputOpen=false; setQDisabled(true);
-      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
+      bad();
+      S.ha=clamp(S.ha+2,0,100); S.e=clamp(S.e-2,0,100); S.h=clamp(S.h+1,0,100);
+      save(); render();
+      seqStatus.textContent='Errore! Rivedi e riprova';
+      showHelp('Atteso: '+label(seq[seqIdx]));
+      setQDisabled(true); setTimeout(()=>playSeq(true), 600);
     }
   }
+
+  function flashQ(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
+  function playQSound(val, symbols){ if(symbols){ beep([330,440,554,659][val-1], 160); } else { beep([440,520,660,780][val-1], 160); } }
 // ===== Loop / decay / variant logic =====
+
   const DECAY = {h:6, ha:4, e:5, c:3};
   const HEALTH_REGEN=2, HEALTH_DECAY=6;
   setInterval(tick, 500);
