@@ -1,219 +1,116 @@
-<!doctype html><html lang="it"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>TamaPWA — v24</title><link rel="manifest" href="manifest.json">
-<style>
-:root{--bg:#0d1117;--panel:#111827;--muted:#9aa0a6;--fg:#eaeaf0;--acc:#46b478;--chip:#1a1f2b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
-main,header{max-width:980px;margin:0 auto;padding:12px}header{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
-h1{font-size:18px;margin:0}.badge{font-size:12px;color:var(--muted)}
-button{background:#19202c;color:var(--fg);border:1px solid #2b2f3a;border-radius:10px;padding:8px 12px;cursor:pointer}
-#pet{display:grid;place-items:center;height:320px;background:var(--panel);border-radius:14px;border:1px solid #2b2f3a}
-#face{font-size:120px;line-height:1}
-#stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
-.card{background:var(--panel);border:1px solid #2b2f3a;border-radius:12px;padding:6px;position:relative;overflow:hidden}
-.bar{height:6px;background:#161b26;border-radius:12px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#7cf3a0)}
-.chip{position:absolute;right:6px;top:6px;background:var(--chip);border:1px solid #2b2f3a;border-radius:999px;padding:2px 8px;font-size:12px;opacity:0;transform:translateY(6px);transition:.35s}.chip.show{opacity:1;transform:translateY(0)}
-#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:99999;pointer-events:none}
-.toast{pointer-events:auto;padding:8px 12px;border:1px solid #2b2f3a;background:#1a1c22;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.35);transition:.3s ease}
-dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:#eaeaf0;max-width:680px}
-/* Sequence */
-#seqBoard{display:grid;grid-template-columns:repeat(2,120px);grid-template-rows:repeat(2,120px);gap:12px;justify-content:center;margin:8px 0}
-.q{width:120px;height:120px;border-radius:12px;border:2px solid #2b2f3a;user-select:none;touch-action:manipulation;position:relative}
-.q span{position:absolute;inset:0;display:grid;place-items:center;font-size:42px;font-weight:800;color:rgba(0,0,0,.35)}
-.q1{background:#d33}.q2{background:#3d3}.q3{background:#36f}.q4{background:#dd3}.q.active{filter:brightness(2)}.q.disabled{opacity:.45;border-style:dashed;pointer-events:none}
-#seqBoard.symbols .q1{background:#4a4a4a}#seqBoard.symbols .q2{background:#595959}#seqBoard.symbols .q3{background:#686868}#seqBoard.symbols .q4{background:#777777}#seqBoard.symbols .q span{color:#eaeaf0;font-size:48px}
-#seqStrip{display:flex;gap:6px;justify-content:center;margin-top:4px}
-.dot{width:18px;height:18px;border-radius:4px;opacity:.55}
-.dot.active{outline:2px solid #eaeaf0;opacity:1}
-.small{font-size:12px;color:#9aa0a6}
-</style>
-</head><body>
-<header>
-  <h1>TamaPWA <span class="badge">v24</span></h1>
-  <div class="right">
-    <button id="feed">🍎 Nutri</button>
-    <button id="catchBtn">🎯 Catch!</button>
-    <button id="reflex">⚡ Reflex</button>
-    <button id="sequence">🟥🟩🟦🟨 Sequence</button>
-    <button id="sleep">😴 Dormi</button>
-    <button id="clean">🧼 Pulisci</button>
-    <button id="sound">🔊 Suoni: ON</button>
-    <button id="install">⬇️ Installa</button>
-    <button id="resetCache">♻️ Reset cache</button>
-  </div>
-</header>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TamaPWA — PWA con Sprite</title>
+  <meta name="theme-color" content="#222" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css?v=8" />
+</head>
+<body>
+  <header>
+    <h1>TamaPWA — PWA</h1>
+    <div class="right">
+      <button id="demo">⏱️ Demo: OFF</button>
+      <button id="installBtn" hidden>Installa</button>
+    </div>
+  </header>
 
-<main>
-  <section id="pet"><div id="face">😐</div></section>
-  <p class="small">Età: <b>0g</b> — Stadio: <b>Uovo</b> — Umore: <b id="mood">Neutro</b></p>
-  <div id="stats">
-    <div class="card"><div>Fame <span class="chip" id="chipH"></span></div><div class="bar"><i id="bH" style="width:40%"></i></div></div>
-    <div class="card"><div>Felicità <span class="chip" id="chipHa"></span></div><div class="bar"><i id="bHa" style="width:50%"></i></div></div>
-    <div class="card"><div>Energia <span class="chip" id="chipE"></span></div><div class="bar"><i id="bE" style="width:60%"></i></div></div>
-    <div class="card"><div>Pulizia <span class="chip" id="chipC"></span></div><div class="bar"><i id="bC" style="width:60%"></i></div></div>
-    <div class="card"><div>Salute</div><div class="bar"><i id="bHe" style="width:80%"></i></div></div>
-  </div>
-  <div id="log"></div>
-</main>
-<div id="toasts"></div>
+  <main>
+    <div class="row">
+      <button id="feed" class="primary">🍎 Nutri</button>
+      <button id="play">🎯 Catch!</button>
+      <button id="reflex">⚡ Reflex</button>
+      <button id="sequence">🟥🟩🟦🟨 Sequence</button>
+      <button id="sleep">😴 Dormi</button>
+      <button id="clean">🧽 Pulisci</button>
+      <button id="sound">🔊 Suoni: ON</button>
+      <button id="reset" class="danger">♻️ Reset</button>
+    </div>
 
-<!-- Catch -->
-<dialog id="gCatch"><h3>🎯 Catch!</h3>
-  <p class="small">Clicca/tocca il bersaglio che si muove. Hai 20 secondi!</p>
-  <div id="catchArea"><div id="target">+1</div></div>
-  <div class="small" style="display:flex;justify-content:space-between;align-items:center">
-    <span>Punti: <b id="cPts">0</b></span>
-    <span>Tempo: <b id="cTime">20</b>s</span>
-    <button id="startCatch" class="primary">Start</button>
-  </div>
-  <form method="dialog"><button>Chiudi</button></form>
-</dialog>
+    <div id="pet"><img id="petImg" alt="Sprite" width="192" height="192" /></div>
+    <p id="info" class="muted small">
+      Età: <b id="age">0</b>g — Stadio: <b id="stage">Uovo</b> — Umore: <b id="mood">Curioso</b> — Variante: <b id="variant">—</b>
+    </p>
 
-<!-- Reflex -->
-<dialog id="gReflex"><h3>⚡ Reflex Tap</h3>
-  <p class="small">Premi START, aspetta <b>GO!</b> e tocca il pannello il più velocemente possibile (5 round).</p>
-  <div id="reflexArea">Pronto…</div>
-  <div class="small" style="display:flex;justify-content:space-between;align-items:center">
-    <span>Round: <b id="rRound">0</b>/5</span>
-    <span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
-    <button id="startReflex" class="primary">Start</button>
-  </div>
-  <form method="dialog"><button>Chiudi</button></form>
-</dialog>
+    <section id="bars">
+      <div class="stat"><label>Fame</label><div class="bar"><div id="bH"></div></div></div>
+      <div class="stat"><label>Felicità</label><div class="bar"><div id="bHa"></div></div></div>
+      <div class="stat"><label>Energia</label><div class="bar"><div id="bE"></div></div></div>
+      <div class="stat"><label>Pulizia</label><div class="bar"><div id="bC"></div></div></div>
+      <div class="stat"><label>Salute</label><div class="bar"><div id="bHe"></div></div></div>
+    </section>
 
-<!-- Sequence -->
-<dialog id="gSequence"><h3>🟥🟩🟦🟨 Sequence</h3>
-  <div class="small" style="display:flex;gap:12px;align-items:center;justify-content:space-between;">
-    <label>Velocità:
-      <select id="seqSpeed">
-        <option value="easy" selected>Lenta</option>
-        <option value="normal">Normale</option>
-        <option value="hard">Veloce</option>
-      </select>
-    </label>
-    <label><input type="checkbox" id="seqSymbols"> Simboli</label>
-    <label><input type="checkbox" id="seqTeach" checked> Modalità didattica</label>
-  </div>
-  <div id="seqStrip"></div>
-  <div id="seqBoard" style="margin-top:8px">
-    <button class="q q1" data-q="1"><span>■</span></button>
-    <button class="q q2" data-q="2"><span>■</span></button>
-    <button class="q q3" data-q="3"><span>■</span></button>
-    <button class="q q4" data-q="4"><span>■</span></button>
-  </div>
-  <div class="small" style="margin-top:6px;display:flex;gap:8px;align-items:center;justify-content:space-between">
-    <span>Round: <b id="seqRound">0</b></span>
-    <span id="seqHelp">Stato: —</span>
-    <span style="display:flex;gap:6px">
-      <button id="replaySeq">Rivedi sequenza</button>
-      <button id="startSequence" class="primary">Start</button>
-    </span>
-  </div>
-  <form method="dialog"><button>Chiudi</button></form>
-</dialog>
+    <!-- Catch game -->
+    <dialog id="gCatch">
+      <h3>🎯 Catch! (15s)</h3>
+      <p class="muted small">Tocca la stella; si sposta ogni 600 ms.</p>
+      <div id="area" aria-label="Area di gioco"></div>
+      <div id="hud">
+        <span>Punteggio: <b id="pts">0</b></span>
+        <span>Tempo: <b id="t">15</b>s</span>
+        <button id="startCatch" class="primary">Start</button>
+      </div>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
 
-<script>
-const $=s=>document.querySelector(s);
-const logEl=$('#log'), toastWrap=$('#toasts');
-function log(msg){ const t=new Date().toLocaleTimeString(); const p=document.createElement('div'); p.textContent=`[${t}] ${msg}`; logEl.prepend(p); while(logEl.children.length>6) logEl.lastChild.remove(); }
-function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; toastWrap.appendChild(el); setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(6px)';},1400); setTimeout(()=>el.remove(),1800); log(msg); }
+    
+    <!-- Reflex -->
+    <dialog id="gReflex">
+      <h3>⚡ Reflex Tap</h3>
+      <p class="muted small">Premi START, aspetta <b>GO!</b> e tocca il pannello il più velocemente possibile.</p>
+      <div id="reflexArea" aria-label="Reflex area">Attendi...</div>
+      <div id="reflexHUD">
+        <span>Round: <b id="rRound">0</b>/5</span>
+        <span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
+        <button id="startReflex" class="primary">Start</button>
+      </div>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
+    <!-- Sequence (Simon-like) -->
+    <dialog id="gSequence">
+      <h3>🟥🟩🟦🟨 Sequence</h3>
+      <p class="muted small">
+        Guarda la sequenza e ripetila <b>nell’ordine</b>. Puoi passare ai <b>simboli</b> se preferisci.
+      </p>
+      <div id="seqModeWrap" class="muted small" style="display:flex;gap:10px;justify-content:flex-end;">
+        <label><input type="checkbox" id="seqSymbols"> Simboli</label>
+      </div>
+      <div id="seqBoard">
+        <button class="q q1" data-q="1"><span>■</span></button>
+        <button class="q q2" data-q="2"><span>■</span></button>
+        <button class="q q3" data-q="3"><span>■</span></button>
+        <button class="q q4" data-q="4"><span>■</span></button>
+      </div>
+      <div id="seqHUD">
+        <span>Round: <b id="seqRound">0</b></span>
+        <span>Stato: <b id="seqStatus">—</b></span>
+        <button id="startSequence" class="primary">Start</button>
+      </div>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
+        
+    
+  </main>
 
-// State & helpers
-const S=JSON.parse(localStorage.getItem('tama')||'{}');
-if(!S.init){ Object.assign(S,{init:true,h:40,ha:50,e:60,c:60,he:80,last:Date.now(),soundOn:true,sleep:false,scores:{sequenceBest:0,reflexBest:null,catchBest:0}}); save(); }
-function save(){ localStorage.setItem('tama', JSON.stringify(S)); }
-function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+  <footer>
+    <small>© 2025 TamaPWA — PWA con sprite pixel‑art</small>
+  </footer>
 
-// Audio
-let ctx; function ctxGet(){ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); return ctx; }
-function tone(f,d=120,v=.25){ if(!S.soundOn) return; const c=ctxGet(); const o=c.createOscillator(), g=c.createGain(); o.type='square'; o.frequency.value=f; g.gain.value=v; o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+d/1000); }
-function good(){ tone(784,90); setTimeout(()=>tone(988,90),95); }
-function bad(){ tone(220,140); setTimeout(()=>tone(180,180),120); }
-function tick(){ tone(520,70,.18); }
-function fanfare(){ tone(659,120); setTimeout(()=>tone(880,140),140); setTimeout(()=>tone(1175,160),320); }
-['pointerdown','touchstart','click','keydown'].forEach(ev=>window.addEventListener(ev,async()=>{ try{ const c=ctxGet(); if(c.state==='suspended') await c.resume(); const b=c.createBuffer(1,1,22050); const s=c.createBufferSource(); s.buffer=b; s.connect(c.destination); s.start(0);}catch{} },{once:true,passive:true}));
-
-// UI refs
-const face=$('#face'), moodEl=$('#mood');
-const bH=$('#bH'), bHa=$('#bHa'), bE=$('#bE'), bC=$('#bC'), bHe=$('#bHe');
-const chipH=$('#chipH'), chipHa=$('#chipHa'), chipE=$('#chipE'), chipC=$('#chipC');
-const feedBtn=$('#feed'), cleanBtn=$('#clean'), sleepBtn=$('#sleep'), soundBtn=$('#sound'), installBtn=$('#install'), resetCacheBtn=$('#resetCache');
-const catchBtn=$('#catchBtn'), reflexBtn=$('#reflex'), seqBtn=$('#sequence');
-
-// Common UI
-soundBtn.onclick=()=>{ S.soundOn=!S.soundOn; soundBtn.textContent=S.soundOn?'🔊 Suoni: ON':'🔈 Suoni: OFF'; save(); if(S.soundOn) good(); };
-installBtn.onclick=async()=>{ try{ await navigator.serviceWorker.register('service-worker.js'); toast('PWA installata/aggiornata'); }catch{ toast('Impossibile installare SW'); } };
-resetCacheBtn.onclick=async()=>{ try{ if('serviceWorker' in navigator){ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.unregister(); } } if('caches' in window){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } }catch{} localStorage.removeItem('tama'); location.reload(true); };
-function chip(el,emoji,txt){ if(!el) return; el.textContent=`${emoji} ${txt}`; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1200); }
-function updateMood(){ let m='Neutro', f='😐'; if(S.sleep){m='Dorme'; f='😴';} else if(S.ha>=70 && S.e>=40){m='Felice'; f='🙂';} else if(S.ha<30 || S.e<25 || S.h<20){m='Triste'; f='😢';} face.textContent=f; moodEl.textContent=m; }
-function render(){ bH.style.width=S.h+'%'; bHa.style.width=S.ha+'%'; bE.style.width=S.e+'%'; bC.style.width=S.c+'%'; bHe.style.width=S.he+'%'; sleepBtn.textContent=S.sleep?'☀️ Sveglia':'😴 Dormi'; updateMood(); }
-render();
-
-// Basic actions
-feedBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.h=clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); chip(chipH,'🍎','+28'); chip(chipC,'🧼','-4'); save(); render(); toast('🍎 Fame +28 / Pulizia -4'); good(); };
-cleanBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.c=clamp(S.c+30,0,100); chip(chipC,'🧼','+30'); save(); render(); toast('🧼 Pulizia +30'); good(); };
-sleepBtn.onclick=()=>{ if(!S.sleep){S.sleep=true; toast('😴 Dorme');} else { S.sleep=false; toast('☀️ Sveglia'); } save(); render(); };
-
-// Decay tick
-setInterval(()=>{ const now=Date.now(); let dt=(now-S.last)/1000; if(dt<=0){S.last=now;return;} let dh=dt/3600; if(document.hidden) dh*=0.25;
-  if(!S.sleep){ S.h=Math.max(0,S.h-2*dh); S.ha=Math.max(0,S.ha-1.5*dh); S.e=Math.max(0,S.e-2*dh); S.c=Math.max(0,S.c-1*dh); }
-  else { S.e=Math.min(100,S.e+5*dh); if(S.e>=95) S.sleep=false; }
-  S.last=now; save(); render(); },1000);
-
-// ===== Catch =====
-const dlgCatch=$('#gCatch'), startCatch=$('#startCatch'), catchArea=$('#catchArea'), target=$('#target'), cPtsEl=$('#cPts'), cTimeEl=$('#cTime');
-let cPts=0, cTime=20, vx=2.2, vy=1.8, playing=false, cTimer=null;
-catchBtn.onclick=()=>{ dlgCatch.showModal(); cPts=0;cTime=20;vx=2.2;vy=1.8;cPtsEl.textContent='0';cTimeEl.textContent='20';target.style.left='10px';target.style.top='10px';playing=false; };
-startCatch.onclick=()=>{ if(playing) return; playing=true; moveLoop(); timeLoop(); };
-function moveLoop(){ if(!playing) return; const maxX=catchArea.clientWidth-target.offsetWidth; const maxY=catchArea.clientHeight-target.offsetHeight; let nx=target.offsetLeft+vx, ny=target.offsetTop+vy; if(nx<0||nx>maxX){ vx*=-1; nx=Math.max(0,Math.min(maxX,nx)); } if(ny<0||ny>maxY){ vy*=-1; ny=Math.max(0,Math.min(maxY,ny)); } target.style.left=nx+'px'; target.style.top=ny+'px'; requestAnimationFrame(moveLoop); }
-function timeLoop(){ if(!playing) return; cTime--; cTimeEl.textContent=String(cTime); if(cTime<=0){ playing=false; endCatch(); } else { cTimer=setTimeout(timeLoop,1000); } }
-target.addEventListener('pointerdown',(e)=>{ if(!playing) return; e.preventDefault(); cPts++; cPtsEl.textContent=String(cPts); tone(700,80); target.textContent=(cPts%5==0)?'+2':'+1'; vx+= (vx>0?.22:-.22); vy+= (vy>0?.20:-.20); },{passive:false});
-function endCatch(){ const gain=Math.min(12,2+Math.floor(cPts/3)); const cost=4; const food=Math.min(6,Math.floor(cPts/4));
-  S.ha=Math.min(100,S.ha+gain); S.e=Math.max(0,S.e-cost); S.h=Math.min(100,S.h+food);
-  if(cPts>(S.scores.catchBest||0)){ S.scores.catchBest=cPts; toast('🏆 Record Catch: '+cPts); }
-  save(); render(); chip(chipHa,'🙂','+'+gain); chip(chipE,'⚡','-'+cost); if(food) chip(chipH,'🍎','+'+food);
-  toast('🎯 Catch: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food:'')); fanfare(); }
-
-// ===== Reflex =====
-const dlgReflex=$('#gReflex'), startReflex=$('#startReflex'), reflexArea=$('#reflexArea');
-const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest'); let rRound=0, rBest=S.scores.reflexBest, rStart=0, rState='idle', rTimeout=null;
-reflexBtn.onclick=()=>{ dlgReflex.showModal(); reflexArea.className='ready'; reflexArea.textContent='Pronto…'; rRoundEl.textContent='0'; rTimeEl.textContent='—'; rBestEl.textContent=(S.scores.reflexBest==null?'—':S.scores.reflexBest); };
-startReflex.onclick=()=>{ clearTimeout(rTimeout); rRound=0; rBest=S.scores.reflexBest; nextReflex(); };
-function nextReflex(){ rRound++; rRoundEl.textContent=String(rRound); if(rRound>5){ fanfare(); toast('⚡ Reflex: serie completata!'); return; } rState='waiting'; reflexArea.className='ready'; reflexArea.textContent='Attendi…'; const delay=600+Math.random()*1800; rTimeout=setTimeout(()=>{ rState='go'; reflexArea.className='go'; reflexArea.textContent='GO! TAP!'; rStart=performance.now(); tone(520,70,.2); },delay); }
-reflexArea.addEventListener('pointerdown',ev=>{ ev.preventDefault(); if(rState==='waiting'){ reflexArea.className='early'; reflexArea.textContent='Troppo presto!'; bad(); S.ha=Math.max(0,S.ha-1); save(); render(); clearTimeout(rTimeout); setTimeout(nextReflex,700);
-} else if(rState==='go'){ const t=Math.round(performance.now()-rStart); rState='scored'; rTimeEl.textContent=String(t); rBest=(rBest==null)?t:Math.min(rBest,t); if(S.scores.reflexBest==null||rBest<S.scores.reflexBest){ S.scores.reflexBest=rBest; toast('🏆 Record Reflex: '+rBest+' ms'); } S.ha=Math.min(100,S.ha+2); S.h=Math.min(100,S.h+1); chip(chipHa,'🙂','+2'); chip(chipH,'🍎','+1'); save(); render(); good(); setTimeout(nextReflex,650); } },{passive:false});
-
-// ===== Sequence =====
-const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), replaySeq=$('#replaySeq'), seqHelp=$('#seqHelp'), seqRoundEl=$('#seqRound'), seqBoard=$('#seqBoard'), seqSymbols=$('#seqSymbols'), seqSpeedSel=$('#seqSpeed'), seqStrip=$('#seqStrip'), seqTeach=$('#seqTeach');
-seqBtn.onclick=()=>{ dlgSeq.showModal(); resetSeq(); updMode(); };
-function updMode(){ if(seqSymbols.checked){ seqBoard.classList.add('symbols'); const qs=seqBoard.querySelectorAll('.q'); qs[0].querySelector('span').textContent='▲'; qs[1].querySelector('span').textContent='◆'; qs[2].querySelector('span').textContent='●'; qs[3].querySelector('span').textContent='■'; } else { seqBoard.classList.remove('symbols'); seqBoard.querySelectorAll('.q').forEach(q=>q.querySelector('span').textContent='■'); } }
-seqSymbols.addEventListener('change',updMode);
-let seq=[], seqIdx=0, seqRound=0, seqState='idle', seqOpen=false, lastTap=0, replayLeft=3;
-startSeq.onclick=()=> startGame();
-replaySeq.onclick=()=>{ if(seqState==='input' && replayLeft>0){ replayLeft--; playSeq(true); seqHelp.textContent=`Rivedi sequenza (${replayLeft} rimaste)`; } };
-function resetSeq(){ seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqOpen=false; replayLeft=3; seqRoundEl.textContent='0'; seqHelp.textContent='Stato: —'; setDisabled(true); drawStrip(); }
-function startGame(){ resetSeq(); seqHelp.textContent='Pronti…'; countdown(()=>{ seqHelp.textContent='Guarda la sequenza'; nextRound(); }); }
-function stepDur(){ const v=seqSpeedSel.value; const teach=seqTeach.checked; const base = v==='easy'?650:v==='hard'?380:500; return teach? base+150 : base; }
-function pauseDur(){ const v=seqSpeedSel.value; const teach=seqTeach.checked; const base = v==='easy'?260:v==='hard'?160:220; return teach? base+120 : base; }
-function nextRound(){ seqRound++; seqRoundEl.textContent=String(seqRound); seqIdx=0; seq.push(1+Math.random()*4|0); drawStrip(); playSeq(); }
-function playSeq(isReplay=false){ seqState='playback'; setDisabled(true); seqOpen=false; const dur=stepDur(), gap=pauseDur(); let i=0; const show=()=>{ if(i>=seq.length){ seqState='input'; setDisabled(false); seqIdx=0; seqOpen=true; seqHelp.textContent='Ripeti nell’ordine — atteso: '+label(seq[0]); return; } const v=seq[i], el=seqBoard.querySelector('.q[data-q=\"'+v+'\"]'); el.classList.add('active'); setActiveDot(i); tick(); setTimeout(()=>{ el.classList.remove('active'); i++; setActiveDot(i); setTimeout(show,gap); },dur);} ; setActiveDot(0); show(); }
-function setDisabled(d){ seqBoard.querySelectorAll('.q').forEach(q=>q.classList.toggle('disabled',!!d)); }
-function drawStrip(){ seqStrip.innerHTML=''; seq.forEach((v,i)=>{ const d=document.createElement('div'); d.className='dot'; d.style.background = (v==1?'#d33':v==2?'#3d3':v==3?'#36f':'#dd3'); seqStrip.appendChild(d); }); }
-function setActiveDot(i){ const dots=[...seqStrip.children]; dots.forEach((d,k)=>d.classList.toggle('active',k===i)); }
-function label(v){ if(seqSymbols.checked){ return {1:'▲',2:'◆',3:'●',4:'■'}[v]; } return {1:'rosso',2:'verde',3:'blu',4:'giallo'}[v]; }
-seqBoard.addEventListener('pointerup',ev=>{ const now=performance.now(); if(now-lastTap<100) return; lastTap=now; const btn=ev.target.closest('.q'); if(!btn) return; ev.preventDefault(); press(+btn.dataset.q); },{passive:false});
-function press(val){ if(seqState!=='input'||!seqOpen) return; const exp=seq[seqIdx]; const el=seqBoard.querySelector('.q[data-q=\"'+val+'\"]'); el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),140);
-  if(val===exp){ good(); seqIdx++; if(seqIdx<seq.length){ seqHelp.textContent='OK — atteso: '+label(seq[seqIdx]); setActiveDot(seqIdx); } else { // round ok
-    const gain=6, cost=3, food=Math.min(5,Math.floor(seq.length/2));
-    S.ha=Math.min(100,S.ha+gain); S.e=Math.max(0,S.e-cost); S.h=Math.min(100,S.h+food);
-    chip(chipHa,'🙂','+'+gain); chip(chipE,'⚡','-'+cost); if(food) chip(chipH,'🍎','+'+food);
-    save(); render(); fanfare(); toast('🟥🟩 Sequence: round '+seqRound+' ok — +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food:''));
-    replayLeft=3; nextRound();
-  } } else { bad(); const gain=2,cost=2,food=1; S.ha=Math.min(100,S.ha+gain); S.e=Math.max(0,S.e-cost); S.h=Math.min(100,S.h+food);
-    chip(chipHa,'🙂','+'+gain); chip(chipE,'⚡','-'+cost); chip(chipH,'🍎','+'+food); save(); render();
-    toast('❌ Sequence: errore. Premio di consolazione — +Fel '+gain+' / -En '+cost+' / +Fame '+food);
-    seqIdx=0; setActiveDot(0); seqHelp.textContent='Rivedi o riprova — atteso: '+label(seq[0]); }
-}
-function countdown(done){ let n=3; const id=setInterval(()=>{ seqHelp.textContent='Partenza: '+n; tone(500,90,.18); n--; if(n<0){ clearInterval(id); good(); done(); } },480); }
-</script>
-</body></html>
+  <script src="script.js?v=8"></script>
+  <script>
+    // Optional "Install" button handling
+    const installBtn = document.getElementById('installBtn');
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault(); deferredPrompt = e; if (installBtn) installBtn.hidden = false;
+    });
+    if (installBtn) installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.hidden = true;
+    });
+  </script>
+</body>
+</html>
