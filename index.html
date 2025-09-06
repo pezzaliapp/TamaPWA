@@ -1,8 +1,9 @@
 <!doctype html><html lang="it"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>TamaPWA — stable</title>
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>TamaPWA — stable v3</title>
+<link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head><body>
 <header>
   <h1>TamaPWA <span class="badge">stable</span></h1>
@@ -30,35 +31,38 @@
 </main>
 <div id="toasts"></div>
 
+<!-- Catch -->
 <dialog id="gCatch"><h3>🎯 Catch</h3>
   <p class="small">Clicca il bersaglio in 15s.</p>
   <div id="catchArea"><div id="target">+1</div></div>
-  <div class="small" style="display:flex;justify-content:space-between;align-items:center">
+  <div class="small" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
     <span>Punti: <b id="cPts">0</b></span><span>Tempo: <b id="cTime">15</b>s</span>
     <button id="startCatch">Start</button>
   </div>
   <form method="dialog"><button>Chiudi</button></form>
 </dialog>
 
+<!-- Reflex -->
 <dialog id="gReflex"><h3>⚡ Reflex</h3>
-  <p class="small">Premi START, aspetta “GO!” e tocca subito (5 round).</p>
+  <p class="small">Premi START, aspetta e tocca quando vedi <b>GO!</b> (5 round).</p>
   <div id="reflexArea" class="ready">Pronto…</div>
-  <div class="small" style="display:flex;justify-content:space-between;align-items:center">
+  <div class="small" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
     <span>Round: <b id="rRound">0</b>/5</span><span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
     <button id="startReflex">Start</button>
   </div>
   <form method="dialog"><button>Chiudi</button></form>
 </dialog>
 
+<!-- Sequence -->
 <dialog id="gSequence"><h3>🟥🟩🟦🟨 Sequence</h3>
-  <p class="small">Guarda la sequenza e ripetila nell’ordine.</p>
+  <p class="small"><b id="seqHelp">Guarda la sequenza, poi ripetila.</b></p>
   <div id="seqBoard">
     <button class="q q1" data-q="1"><span>■</span></button>
     <button class="q q2" data-q="2"><span>■</span></button>
     <button class="q q3" data-q="3"><span>■</span></button>
     <button class="q q4" data-q="4"><span>■</span></button>
   </div>
-  <div class="small" style="display:flex;justify-content:space-between;align-items:center">
+  <div class="small" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
     <span>Round: <b id="seqRound">0</b></span><span>Stato: <b id="seqStatus">—</b></span>
     <button id="startSequence">Start</button>
   </div>
