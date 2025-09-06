@@ -1,5 +1,5 @@
 // Service Worker con auto-update, cache dinamica sprite
-const CACHE = 'tama-pwa-sprites-v9'; // bump ad ogni release
+const CACHE = 'tama-pwa-sprites-v10'; // bump ad ogni release
 const ASSETS = [
   './',
   './index.html',
@@ -48,4 +48,15 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of allClients) {
+      if ('focus' in client) { client.focus(); return; }
+    }
+    if (clients.openWindow) { return clients.openWindow('./'); }
+  })());
 });
