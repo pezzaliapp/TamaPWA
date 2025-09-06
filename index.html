@@ -1,126 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TamaPWA — PWA con Sprite</title>
-  <meta name="theme-color" content="#222" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=14" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>TamaPWA — Baseline v15</title>
+<link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <header>
-    <h1>TamaPWA — PWA</h1>
-    <div class="right"><button id="diagBtn">🔧 Diagnostica</button> <button id="resetCacheBtn">♻️ Reset cache</button> 
-      <button id="demo">⏱️ Demo: OFF</button>
-      <span id="demoBadge" class="muted small" style="display:none;">(DEMO attiva: 1m = 1g)</span>
-      <button id="installBtn" hidden>Installa</button>
-    </div>
-  </header>
-
-  <main>
-    <div class="row">
-      <button id="feed" class="primary">🍎 Nutri</button>
-      <button id="play">🎯 Catch!</button>
-      <button id="reflex">⚡ Reflex</button>
-      <button id="sequence">🟥🟩🟦🟨 Sequence</button>
-      <button id="sleep">😴 Dormi</button>
-      <button id="clean">🧽 Pulisci</button>
-      <button id="sound">🔊 Suoni: ON</button>
-      <button id="reset" class="danger">♻️ Reset</button>
-    </div>
-
-    <div id="pet"><img id="petImg" alt="Sprite" width="192" height="192" /></div>
-    <p id="info" class="muted small">
-      Età: <b id="age">0</b>g — Stadio: <b id="stage">Uovo</b> — Umore: <b id="mood">Curioso</b> — Variante: <b id="variant">—</b>
-    </p>
-
-    <section id="bars">
-      <div class="stat"><label>Fame</label><div class="bar"><div id="bH"></div></div></div>
-      <div class="stat"><label>Felicità</label><div class="bar"><div id="bHa"></div></div></div>
-      <div class="stat"><label>Energia</label><div class="bar"><div id="bE"></div></div></div>
-      <div class="stat"><label>Pulizia</label><div class="bar"><div id="bC"></div></div></div>
-      <div class="stat"><label>Salute</label><div class="bar"><div id="bHe"></div></div></div>
-    </section>
-
-    <!-- Catch game -->
-    <dialog id="gCatch">
-      <h3>🎯 Catch! (15s)</h3>
-      <p class="muted small">Tocca la stella; si sposta ogni 600 ms.</p>
-      <div id="area" aria-label="Area di gioco"></div>
-      <div id="hud">
-        <span>Punteggio: <b id="pts">0</b></span>
-        <span>Tempo: <b id="t">15</b>s</span>
-        <button id="startCatch" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
-
-    
-    <!-- Reflex -->
-    <dialog id="gReflex">
-      <h3>⚡ Reflex Tap</h3>
-      <p class="muted small">Premi START, aspetta <b>GO!</b> e tocca il pannello il più velocemente possibile.</p>
-      <div id="reflexArea" aria-label="Reflex area">Attendi...</div>
-      <div id="reflexHUD">
-        <span>Round: <b id="rRound">0</b>/5</span>
-        <span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
-        <button id="startReflex" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
-    <!-- Sequence (Simon-like) -->
-    <dialog id="gSequence">
-      <h3>🟥🟩🟦🟨 Sequence</h3>
-      <p class="muted small">
-        Guarda la sequenza e ripetila <b>nell’ordine</b>. Puoi passare ai <b>simboli</b> se preferisci.
-      </p>
-      <div id="seqModeWrap" class="muted small" style="display:flex;gap:10px;justify-content:flex-end;">
-        <label><input type="checkbox" id="seqSymbols"> Simboli</label>
-      </div>
-      <div id="seqBoard">
-        <button class="q q1" data-q="1"><span>■</span></button>
-        <button class="q q2" data-q="2"><span>■</span></button>
-        <button class="q q3" data-q="3"><span>■</span></button>
-        <button class="q q4" data-q="4"><span>■</span></button>
-      </div>
-      <div id="seqHUD">
-        <span>Round: <b id="seqRound">0</b></span>
-        <span>Stato: <b id="seqStatus">—</b></span>
-        <button id="startSequence" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
-        
-    
-  
-    <dialog id="diag">
-      <h3>🔧 Diagnostica</h3>
-      <p class="muted small">Controllo asset principali e sprite.</p>
-      <ul id="diagList" class="small" style="max-height:260px;overflow:auto;margin:8px 0 12px"></ul>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
-
-  </main>
-  <div id="toasts" style="position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9999"></div>
-
-  <footer>
-    <small>© 2025 TamaPWA — PWA con sprite pixel‑art</small>
-  </footer>
-
-  <script src="script.js?v=14"></script>
-  <script>
-    // Optional "Install" button handling
-    const installBtn = document.getElementById('installBtn');
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault(); deferredPrompt = e; if (installBtn) installBtn.hidden = false;
-    });
-    if (installBtn) installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.hidden = true;
-    });
-  </script>
+<h1>TamaPWA Baseline v15</h1>
+<p>Versione minimale funzionante.</p>
+<script>
+console.log("TamaPWA baseline v15 avviata");
+</script>
 </body>
 </html>
