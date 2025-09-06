@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>TamaPWA — Il tuo pet tascabile</title>
+  <meta name="theme-color" content="#222" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>TamaPWA</h1>
+    <button id="installBtn" hidden>Installa</button>
+  </header>
+
+  <main>
+    <section id="petCard">
+      <div id="stageBadge">Uovo</div>
+      <div id="pet" aria-live="polite" aria-label="Creatura virtuale">
+        <div id="petSprite">（・⊝・）</div>
+      </div>
+      <div id="moodText">Umore: Curioso</div>
+      <div id="ageText">Età: 0g</div>
+      <div id="lastSeenText"></div>
+    </section>
+
+    <section id="stats">
+      <div class="stat">
+        <label>Fame</label>
+        <div class="bar"><div id="barHunger"></div></div>
+      </div>
+      <div class="stat">
+        <label>Felicità</label>
+        <div class="bar"><div id="barHappy"></div></div>
+      </div>
+      <div class="stat">
+        <label>Energia</label>
+        <div class="bar"><div id="barEnergy"></div></div>
+      </div>
+      <div class="stat">
+        <label>Pulizia</label>
+        <div class="bar"><div id="barClean"></div></div>
+      </div>
+      <div class="stat">
+        <label>Salute</label>
+        <div class="bar"><div id="barHealth"></div></div>
+      </div>
+    </section>
+
+    <section id="actions">
+      <button data-act="feed"   class="primary">🍎 Nutri</button>
+      <button data-act="play">🎮 Gioca</button>
+      <button data-act="sleep">😴 Dormi</button>
+      <button data-act="clean">🧽 Pulisci</button>
+      <button id="notifBtn">🔔 Promemoria</button>
+      <button id="backupBtn">⬇️ Backup</button>
+      <button id="restoreBtn">⬆️ Ripristina</button>
+      <input id="restoreFile" type="file" accept="application/json" hidden />
+      <button id="infoBtn">❓ Come funziona</button>
+      <button id="resetBtn" class="danger">♻️ Reset</button>
+    </section>
+
+    <dialog id="howto">
+      <h2>Come funziona</h2>
+      <p>
+        TamaPWA è un pet virtuale che vive sul tuo telefono. I suoi bisogni calano col tempo,
+        anche quando l’app è chiusa. Tienilo in salute:
+      </p>
+      <ul>
+        <li><strong>Fame</strong> ↓ lentamente → <em>Nutri</em></li>
+        <li><strong>Felicità</strong> ↓ se lo ignori → <em>Gioca</em></li>
+        <li><strong>Energia</strong> ↓ col tempo → <em>Dormi</em></li>
+        <li><strong>Pulizia</strong> ↓ se trascurato → <em>Pulisci</em></li>
+      </ul>
+      <p>La <strong>Salute</strong> dipende da tutto il resto. Cresce, cambia umore ed evolve (Uovo → Baby → Teen → Adult).</p>
+      <p><em>Funziona offline</em> e puoi installarla come app dalla schermata home.</p>
+      <details>
+        <summary>Novità</summary>
+        <ul>
+          <li><strong>🔔 Promemoria</strong>: notifiche locali quando servono cure (senza server).</li>
+          <li><strong>🎮 Minigioco</strong>: “Catch!” per aumentare la felicità.</li>
+          <li><strong>⬇️⬆️ Backup/Ripristino</strong>: esporta/importa lo stato in JSON.</li>
+        </ul>
+      </details>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
+
+    <dialog id="notifDialog">
+      <h3>Promemoria</h3>
+      <p>Attiva notifiche quando il pet ha bisogno di attenzioni.</p>
+      <label>Frequenza controllo:
+        <select id="notifFreq">
+          <option value="60">Ogni 60 min</option>
+          <option value="180">Ogni 3 ore</option>
+          <option value="360" selected>Ogni 6 ore</option>
+        </select>
+      </label>
+      <p style="font-size:.9em;color:#9aa0a6;">Le notifiche sono locali (niente cloud) e funzionano se hai dato il permesso.</p>
+      <menu>
+        <button id="notifDisable">Disattiva</button>
+        <button id="notifSave" class="primary">Salva</button>
+      </menu>
+    </dialog>
+
+    <dialog id="gameDialog">
+      <h3>🎮 Catch! (10 secondi)</h3>
+      <p>Tocca il bersaglio che si sposta per fare punti.</p>
+      <div id="gameArea" tabindex="0" aria-label="Area di gioco"></div>
+      <div id="gameHUD">
+        <span>Punteggio: <b id="score">0</b></span>
+        <span>Tempo: <b id="time">10</b>s</span>
+        <button id="startGameBtn" class="primary">Start</button>
+      </div>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
+  </main>
+
+  <footer>
+    <small>© 2025 TamaPWA — Open, semplice, senza cloud.</small>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>

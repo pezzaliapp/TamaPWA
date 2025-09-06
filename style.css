@@ -1,0 +1,113 @@
+/* Reset minimo */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+
+:root{
+  --bg:#0e0f12;
+  --card:#1a1c22;
+  --ink:#eaeaf0;
+  --muted:#9aa0a6;
+  --accent:#7cf3a0;
+  --danger:#ff5b6e;
+  --barbg:#2a2d36;
+}
+
+body{
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+  background: radial-gradient(1200px 600px at 50% -10%, #171923, var(--bg));
+  color: var(--ink);
+  display:flex; flex-direction:column; min-height:100dvh;
+}
+
+header, footer{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 12px 16px;
+  background: transparent;
+}
+
+h1{ font-size: 20px; margin:0; letter-spacing:.5px; }
+
+main{ width:min(920px, 100%); margin: 0 auto; padding: 12px; flex:1; }
+
+#petCard{
+  background: linear-gradient(180deg, #1d2030, var(--card));
+  border:1px solid #2b2f3a; border-radius:16px; padding:16px; text-align:center;
+  position:relative; overflow:hidden;
+}
+
+#stageBadge{
+  position:absolute; top:12px; left:12px; font-size:12px; padding:4px 8px;
+  border:1px solid #364055; border-radius:999px; color:#b8c1ff; background:#141827;
+}
+
+#pet{
+  aspect-ratio: 1 / 1; width:min(60vw, 320px); margin: 16px auto;
+  display:grid; place-items:center;
+  background:
+    linear-gradient(135deg, #12141b 25%, transparent 25%) -8px 0/16px 16px,
+    linear-gradient(225deg, #12141b 25%, transparent 25%) -8px 0/16px 16px,
+    linear-gradient(315deg, #12141b 25%, transparent 25%) 0px 0/16px 16px,
+    linear-gradient(45deg, #12141b 25%, transparent 25%) 0px 0/16px 16px,
+    #0f1320;
+  border:2px solid #3a3f54; border-radius:12px;
+  text-shadow: 0 1px 0 #000;
+}
+
+#petSprite{
+  font-size: clamp(28px, 10vw, 56px);
+  line-height:1; user-select:none;
+}
+
+#moodText, #ageText, #lastSeenText{ margin:6px 0; color: var(--muted); }
+
+#stats{
+  display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:16px 0;
+}
+@media (min-width:700px){ #stats{ grid-template-columns: repeat(5,1fr); } }
+
+.stat{ background:var(--card); border:1px solid #2b2f3a; border-radius:12px; padding:10px; }
+.stat label{ display:block; font-size:12px; color:#c9d1d9; margin-bottom:6px; }
+.bar{ height:10px; background:var(--barbg); border-radius:999px; overflow:hidden; }
+.bar > div{ height:100%; width:0%; background: linear-gradient(90deg, #3de0ad, var(--accent)); }
+
+#actions{
+  display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin: 10px 0 18px;
+}
+button{
+  padding:10px 14px; border-radius:10px; border:1px solid #2b2f3a;
+  background:#202432; color:var(--ink); cursor:pointer; font-weight:600;
+}
+button.primary{ outline:2px solid #2d4; }
+button.danger{ border-color:#5c2430; background:#30171c; color:#ffb3bd; }
+button:active{ transform: translateY(1px); }
+
+dialog{
+  border:none; border-radius:16px; background:#11151f; color:#eaeaf0;
+  padding:18px; width:min(560px, 90vw);
+}
+dialog::backdrop{ background:rgba(0,0,0,.6); }
+
+/* Minigioco */
+#gameArea{
+  margin: 10px 0;
+  width:min(520px, 90vw);
+  height: 300px;
+  border:1px dashed #2b2f3a;
+  border-radius:10px;
+  position:relative;
+  background:#0f1320;
+  overflow:hidden;
+}
+.target{
+  position:absolute;
+  width:40px; height:40px;
+  border-radius:50%;
+  background:#7cf3a0;
+  display:grid; place-items:center;
+  user-select:none;
+  cursor:pointer;
+  font-weight:bold;
+}
+#gameHUD{
+  display:flex; gap:12px; align-items:center; justify-content:space-between;
+}
