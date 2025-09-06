@@ -196,55 +196,82 @@
   }
 
   // ===== Sequence (Simon-like) =====
-// v25.1 Sequence — logica Simon corretta (append + repeat same on error)
+// v25.2 Sequence — Simon corretto con countdown sonoro e start affidabile
 const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
 const seqBoard=document.getElementById('seqBoard');
 const qs = Array.from(seqBoard ? seqBoard.querySelectorAll('.q') : []);
-let seq=[], seqIdx=0, seqRound=0, state='idle', accepting=false, lastTap=0;
+let seq=[], seqIdx=0, seqRound=0, state='idle', accepting=false, lastTap=0, countdownId=null;
 
-function flash(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
+function flash(el){ if(!el) return; el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
 function toneFor(v){ beep([440,520,660,780][v-1], 120); }
 
 function playback(){
   state='playback'; accepting=false; let i=0;
   const STEP=520, GAP=230;
-  seqStatus.textContent='Guarda la sequenza';
+  seqStatus && (seqStatus.textContent='Guarda la sequenza');
   function step(){
-    if(i>=seq.length){ state='input'; accepting=true; seqIdx=0; seqStatus.textContent='Ripeti ('+seq.length+')'; return; }
+    if(i>=seq.length){ state='input'; accepting=true; seqIdx=0; seqStatus && (seqStatus.textContent='Ripeti ('+seq.length+')'); return; }
     const v=seq[i], el=qs[v-1]; if(el){ el.classList.add('active'); tick(); toneFor(v); }
     setTimeout(()=>{ if(el) el.classList.remove('active'); i++; setTimeout(step, GAP); }, STEP);
   }
   step();
 }
+
 function nextRound(){
   seqRound++; if(seqRoundEl) seqRoundEl.textContent=String(seqRound);
   seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
   setTimeout(playback, 360);
 }
-startSeq && startSeq.addEventListener('click', ()=>{
+
+function startSeqFlow(){
+  // Reset and audible countdown 3..2..1.. GO
   seq=[]; seqRound=0; seqIdx=0; state='idle'; accepting=false;
-  seqStatus.textContent='Pronti…';
-  setTimeout(()=>nextRound(), 500);
+  if(seqStatus) seqStatus.textContent='Pronti…';
+  let n=3;
+  if(countdownId) clearInterval(countdownId);
+  countdownId = setInterval(()=>{
+    if(seqStatus) seqStatus.textContent = 'Partenza: '+n;
+    beep(500 + (3-n)*40, 90, 'square', 0.20);
+    n--;
+    if(n<0){
+      clearInterval(countdownId); countdownId=null;
+      good();
+      nextRound();
+    }
+  }, 520);
+}
+
+startSeq && startSeq.addEventListener('click', ()=>{
+  startSeqFlow();
 });
+
+// Quando si apre il dialog, assicuriamoci che l'audio sia sbloccato dal primo gesto
+['click','pointerdown','touchstart','keydown'].forEach(ev=>{
+  dlgSeq && dlgSeq.addEventListener(ev, async ()=>{
+    try{ const ac = (window.__ac || (window.AudioContext||window.webkitAudioContext)? new (window.AudioContext||window.webkitAudioContext)():null); if(ac && ac.state==='suspended') await ac.resume(); }catch{}
+  }, {once:true, passive:true});
+});
+
 qs.forEach(btn=>btn.addEventListener('pointerup',(ev)=>{
   ev.preventDefault(); const now=performance.now(); if(now-lastTap<120) return; lastTap=now;
   if(state!=='input'||!accepting) return;
   const v = Number(btn.dataset.q); flash(btn); toneFor(v);
   if(v===seq[seqIdx]){
     seqIdx++;
-    if(seqIdx<seq.length){ seqStatus.textContent='Avanti… ('+(seqIdx)+'/'+seq.length+')'; good(); }
+    if(seqIdx<seq.length){ if(seqStatus) seqStatus.textContent='Avanti… ('+(seqIdx)+'/'+seq.length+')'; good(); }
     else { // round superato: premi, poi nuovo round (append)
       grantRewards({ha:+6, e:-3, h:+Math.min(5, Math.floor(seq.length/2))}, '🟥🟩 Sequence: round '+seqRound+' ✓');
-      petReact('good'); fanfare(); nextRound();
+      if(typeof petReact==='function') petReact('good'); fanfare(); nextRound();
     }
   } else {
-    // Errore: NESSUN cambio sequenza. Ripeti lo STESSO round/seq.
+    // Errore: ripeti lo stesso round/seq
     state='fail'; accepting=false; bad();
-    seqStatus.textContent='Errore! Riparte il round';
+    if(seqStatus) seqStatus.textContent='Errore! Riparte il round';
     setTimeout(playback, 800);
   }
 }, {passive:false}));
 // ===== Loop / decay / variant logic =====
+
 
 
 
