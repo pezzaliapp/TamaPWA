@@ -8,12 +8,12 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
 </head>
 <body>
   <header>
     <h1>TamaPWA — PWA</h1>
-    <div class="right">
+    <div class="right"><button id="diagBtn">🔧 Diagnostica</button> <button id="resetCacheBtn">♻️ Reset cache</button> 
       <button id="demo">⏱️ Demo: OFF</button>
       <span id="demoBadge" class="muted small" style="display:none;">(DEMO attiva: 1m = 1g)</span>
       <button id="installBtn" hidden>Installa</button>
@@ -95,6 +95,14 @@
     </dialog>
         
     
+  
+    <dialog id="diag">
+      <h3>🔧 Diagnostica</h3>
+      <p class="muted small">Controllo asset principali e sprite.</p>
+      <ul id="diagList" class="small" style="max-height:260px;overflow:auto;margin:8px 0 12px"></ul>
+      <form method="dialog"><button>Chiudi</button></form>
+    </dialog>
+
   </main>
   <div id="toasts" style="position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9999"></div>
 
@@ -102,7 +110,7 @@
     <small>© 2025 TamaPWA — PWA con sprite pixel‑art</small>
   </footer>
 
-  <script src="script.js?v=13"></script>
+  <script src="script.js?v=14"></script>
   <script>
     // Optional "Install" button handling
     const installBtn = document.getElementById('installBtn');
