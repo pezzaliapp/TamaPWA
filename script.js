@@ -290,10 +290,7 @@
         setTimeout(nextSeqRound, 650);
       }
     } else {
-      seqStatus.textContent='Errore!';
-      seqState='idle'; seqInputOpen=false; setQDisabled(true);
-      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
-    }
+      seqStatus.textContent='Errore! Riparte il round'; seqState='idle'; seqInputOpen=false; setQDisabled(true); beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240); setTimeout(playSeq, 800);}
   }
 // ===== Loop / decay / variant logic =====
   const DECAY = {h:6, ha:4, e:5, c:3};
@@ -408,3 +405,21 @@
   render(true);
   ensureAudioUnlocked();
 })();
+  function toast(msg){
+    let wrap = document.getElementById('toasts'); 
+    if(!wrap){ wrap = document.createElement('div'); wrap.id='toasts'; document.body.appendChild(wrap); }
+    const el = document.createElement('div'); el.className='toast'; el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(()=>{ el.classList.add('hide'); }, 1400);
+    setTimeout(()=>{ el.remove(); }, 1800);
+  }
+
+  function grantRewards(delta, label){
+    if (typeof delta.ha==='number') S.ha = clamp(S.ha + delta.ha, 0, 100);
+    if (typeof delta.e ==='number') S.e  = clamp(S.e  + delta.e , 0, 100);
+    if (typeof delta.h ==='number') S.h  = clamp(S.h  + delta.h , 0, 100);
+    if (typeof delta.c ==='number') S.c  = clamp(S.c  + delta.c , 0, 100);
+    save(); render();
+    if (label) toast(label);
+    try{ if(delta.ha && delta.ha>0) emote('🙂'); else if(delta.ha && delta.ha<0) emote('🙁'); }catch{}
+  }
