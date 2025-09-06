@@ -1,29 +1,14 @@
-# TamaPWA — Evoluzioni ramificate basate sulla cura (v3)
+# TamaPWA v4 (fix) — Sprite pixel‑art, Registro, Bonus/Malus
 
-Questa release introduce **varianti di crescita** in base al tuo stile di cura.
-Quando passi a **Teen (giorno 3)** il pet sceglie una variante; a **Adult (giorno 7)** la consolida.
+- Sprite **pixel‑art** per variante (file `sprite-*.png`).
+- **Registro cura** con azioni (feed/play/clean, minuti sonno, energia spesa) e medie (pulizia/felicità).
+- **Bonus/Malus** per variante:
+  - *Sportivo*: +felicità col gioco, +costo energia
+  - *Goloso*: nutrire più efficace, ma sporca di più
+  - *Pulito*: pulire più efficace, +2 salute
+  - *Sognatore*: sonno rigenera più energia
+  - *Equilibrato*: decadimenti -10%, piccoli bonus
 
-## Varianti
-- **Sportivo** → giochi spesso, consumi energia
-- **Goloso** → lo nutri spesso (e la pulizia media è più bassa)
-- **Pulito** → lo pulisci spesso e mantieni alta la pulizia media
-- **Sognatore** → dorme molto
-- **Equilibrato** → nessun eccesso, umore medio-alto e bilanciato
-
-La UI mostra `Variante: ...` sotto allo sprite. Piccola icona accanto allo sprite (🏃🍰✨🌙⚖️).
-
-## Come decide la variante
-Il codice tiene traccia di:
-- **Azioni**: feed/play/clean + energia spesa durante il gioco
-- **Sonno** (minuti accumulati)
-- **Medie** su Pulizia e Felicità
-
-Un sistema di punteggi sceglie la variante dominante al passaggio di stadio (con leggera inerzia a Adult).
-
-## File
-- `index.html`, `style.css`, `script.js`
-- `manifest.json`, `service-worker.js`
-- `icon-192.png`, `icon-512.png` (placeholder)
-- `README.md`
+Carica tutto nella root della repo e apri `index.html` (o attiva GitHub Pages).
 
 MIT © 2025

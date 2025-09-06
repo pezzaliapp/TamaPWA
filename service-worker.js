@@ -1,4 +1,4 @@
-const CACHE = 'tama-pwa-v3';
+const CACHE = 'tama-pwa-v4-fixed';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,12 @@ const ASSETS = [
   './script.js',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './sprite-sportivo.png',
+  './sprite-goloso.png',
+  './sprite-pulito.png',
+  './sprite-sognatore.png',
+  './sprite-equilibrato.png'
 ];
 
 self.addEventListener('install', (e) => {
