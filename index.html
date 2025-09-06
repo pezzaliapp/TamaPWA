@@ -1,6 +1,6 @@
 <!doctype html><html lang="it"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>TamaPWA — v23</title><link rel="manifest" href="manifest.json">
+<title>TamaPWA — v24</title><link rel="manifest" href="manifest.json">
 <style>
 :root{--bg:#0d1117;--panel:#111827;--muted:#9aa0a6;--fg:#eaeaf0;--acc:#46b478;--chip:#1a1f2b}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
@@ -15,23 +15,21 @@ button{background:#19202c;color:var(--fg);border:1px solid #2b2f3a;border-radius
 .chip{position:absolute;right:6px;top:6px;background:var(--chip);border:1px solid #2b2f3a;border-radius:999px;padding:2px 8px;font-size:12px;opacity:0;transform:translateY(6px);transition:.35s}.chip.show{opacity:1;transform:translateY(0)}
 #toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:99999;pointer-events:none}
 .toast{pointer-events:auto;padding:8px 12px;border:1px solid #2b2f3a;background:#1a1c22;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.35);transition:.3s ease}
-dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:#eaeaf0;max-width:640px}
+dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:#eaeaf0;max-width:680px}
 /* Sequence */
-#seqBoard{display:grid;grid-template-columns:repeat(2,120px);grid-template-rows:repeat(2,120px);gap:12px;justify-content:center;margin:12px 0}
+#seqBoard{display:grid;grid-template-columns:repeat(2,120px);grid-template-rows:repeat(2,120px);gap:12px;justify-content:center;margin:8px 0}
 .q{width:120px;height:120px;border-radius:12px;border:2px solid #2b2f3a;user-select:none;touch-action:manipulation;position:relative}
 .q span{position:absolute;inset:0;display:grid;place-items:center;font-size:42px;font-weight:800;color:rgba(0,0,0,.35)}
 .q1{background:#d33}.q2{background:#3d3}.q3{background:#36f}.q4{background:#dd3}.q.active{filter:brightness(2)}.q.disabled{opacity:.45;border-style:dashed;pointer-events:none}
 #seqBoard.symbols .q1{background:#4a4a4a}#seqBoard.symbols .q2{background:#595959}#seqBoard.symbols .q3{background:#686868}#seqBoard.symbols .q4{background:#777777}#seqBoard.symbols .q span{color:#eaeaf0;font-size:48px}
-/* Reflex */#reflexArea{position:relative;width:min(520px,95vw);height:220px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;display:grid;place-items:center;font-size:26px;font-weight:700;user-select:none;touch-action:manipulation}
-#reflexArea.ready{background:#202432}#reflexArea.go{background:#1f3d1f}#reflexArea.early{background:#3d1f1f}
-/* Catch */#catchArea{position:relative;width:min(520px,95vw);height:260px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;overflow:hidden;touch-action:manipulation}
-#target{position:absolute;width:44px;height:44px;border-radius:50%;background:#7cf3a0;box-shadow:0 0 12px rgba(124,243,160,.6);display:grid;place-items:center;font-weight:800;color:#101826;user-select:none}
-#log{margin-top:14px;color:#9aa0a6;font-size:12px}
+#seqStrip{display:flex;gap:6px;justify-content:center;margin-top:4px}
+.dot{width:18px;height:18px;border-radius:4px;opacity:.55}
+.dot.active{outline:2px solid #eaeaf0;opacity:1}
 .small{font-size:12px;color:#9aa0a6}
 </style>
 </head><body>
 <header>
-  <h1>TamaPWA <span class="badge">v23</span></h1>
+  <h1>TamaPWA <span class="badge">v24</span></h1>
   <div class="right">
     <button id="feed">🍎 Nutri</button>
     <button id="catchBtn">🎯 Catch!</button>
@@ -85,27 +83,31 @@ dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:#eae
 
 <!-- Sequence -->
 <dialog id="gSequence"><h3>🟥🟩🟦🟨 Sequence</h3>
-  <p class="small">Scegli la velocità, guarda la sequenza, poi ripeti nell’ordine.</p>
   <div class="small" style="display:flex;gap:12px;align-items:center;justify-content:space-between;">
     <label>Velocità:
       <select id="seqSpeed">
-        <option value="easy">Lenta</option>
-        <option value="normal" selected>Normale</option>
+        <option value="easy" selected>Lenta</option>
+        <option value="normal">Normale</option>
         <option value="hard">Veloce</option>
       </select>
     </label>
     <label><input type="checkbox" id="seqSymbols"> Simboli</label>
+    <label><input type="checkbox" id="seqTeach" checked> Modalità didattica</label>
   </div>
+  <div id="seqStrip"></div>
   <div id="seqBoard" style="margin-top:8px">
     <button class="q q1" data-q="1"><span>■</span></button>
     <button class="q q2" data-q="2"><span>■</span></button>
     <button class="q q3" data-q="3"><span>■</span></button>
     <button class="q q4" data-q="4"><span>■</span></button>
   </div>
-  <div class="small" style="margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+  <div class="small" style="margin-top:6px;display:flex;gap:8px;align-items:center;justify-content:space-between">
     <span>Round: <b id="seqRound">0</b></span>
-    <span>Stato: <b id="seqStatus">—</b></span>
-    <button id="startSequence" class="primary">Start</button>
+    <span id="seqHelp">Stato: —</span>
+    <span style="display:flex;gap:6px">
+      <button id="replaySeq">Rivedi sequenza</button>
+      <button id="startSequence" class="primary">Start</button>
+    </span>
   </div>
   <form method="dialog"><button>Chiudi</button></form>
 </dialog>
@@ -172,39 +174,46 @@ function endCatch(){ const gain=Math.min(12,2+Math.floor(cPts/3)); const cost=4;
   save(); render(); chip(chipHa,'🙂','+'+gain); chip(chipE,'⚡','-'+cost); if(food) chip(chipH,'🍎','+'+food);
   toast('🎯 Catch: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food:'')); fanfare(); }
 
-// ===== Reflex (basic) =====
+// ===== Reflex =====
 const dlgReflex=$('#gReflex'), startReflex=$('#startReflex'), reflexArea=$('#reflexArea');
 const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest'); let rRound=0, rBest=S.scores.reflexBest, rStart=0, rState='idle', rTimeout=null;
 reflexBtn.onclick=()=>{ dlgReflex.showModal(); reflexArea.className='ready'; reflexArea.textContent='Pronto…'; rRoundEl.textContent='0'; rTimeEl.textContent='—'; rBestEl.textContent=(S.scores.reflexBest==null?'—':S.scores.reflexBest); };
 startReflex.onclick=()=>{ clearTimeout(rTimeout); rRound=0; rBest=S.scores.reflexBest; nextReflex(); };
-function nextReflex(){ rRound++; rRoundEl.textContent=String(rRound); if(rRound>5){ fanfare(); toast('⚡ Reflex: serie completata!'); return; } rState='waiting'; reflexArea.className='ready'; reflexArea.textContent='Attendi…'; const delay=600+Math.random()*1800; rTimeout=setTimeout(()=>{ rState='go'; reflexArea.className='go'; reflexArea.textContent='GO! TAP!'; rStart=performance.now(); tick(); },delay); }
+function nextReflex(){ rRound++; rRoundEl.textContent=String(rRound); if(rRound>5){ fanfare(); toast('⚡ Reflex: serie completata!'); return; } rState='waiting'; reflexArea.className='ready'; reflexArea.textContent='Attendi…'; const delay=600+Math.random()*1800; rTimeout=setTimeout(()=>{ rState='go'; reflexArea.className='go'; reflexArea.textContent='GO! TAP!'; rStart=performance.now(); tone(520,70,.2); },delay); }
 reflexArea.addEventListener('pointerdown',ev=>{ ev.preventDefault(); if(rState==='waiting'){ reflexArea.className='early'; reflexArea.textContent='Troppo presto!'; bad(); S.ha=Math.max(0,S.ha-1); save(); render(); clearTimeout(rTimeout); setTimeout(nextReflex,700);
 } else if(rState==='go'){ const t=Math.round(performance.now()-rStart); rState='scored'; rTimeEl.textContent=String(t); rBest=(rBest==null)?t:Math.min(rBest,t); if(S.scores.reflexBest==null||rBest<S.scores.reflexBest){ S.scores.reflexBest=rBest; toast('🏆 Record Reflex: '+rBest+' ms'); } S.ha=Math.min(100,S.ha+2); S.h=Math.min(100,S.h+1); chip(chipHa,'🙂','+2'); chip(chipH,'🍎','+1'); save(); render(); good(); setTimeout(nextReflex,650); } },{passive:false});
 
 // ===== Sequence =====
-const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound'), seqBoard=$('#seqBoard'), seqSymbols=$('#seqSymbols'), seqSpeedSel=$('#seqSpeed');
+const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), replaySeq=$('#replaySeq'), seqHelp=$('#seqHelp'), seqRoundEl=$('#seqRound'), seqBoard=$('#seqBoard'), seqSymbols=$('#seqSymbols'), seqSpeedSel=$('#seqSpeed'), seqStrip=$('#seqStrip'), seqTeach=$('#seqTeach');
 seqBtn.onclick=()=>{ dlgSeq.showModal(); resetSeq(); updMode(); };
 function updMode(){ if(seqSymbols.checked){ seqBoard.classList.add('symbols'); const qs=seqBoard.querySelectorAll('.q'); qs[0].querySelector('span').textContent='▲'; qs[1].querySelector('span').textContent='◆'; qs[2].querySelector('span').textContent='●'; qs[3].querySelector('span').textContent='■'; } else { seqBoard.classList.remove('symbols'); seqBoard.querySelectorAll('.q').forEach(q=>q.querySelector('span').textContent='■'); } }
 seqSymbols.addEventListener('change',updMode);
-let seq=[], seqIdx=0, seqRound=0, seqState='idle', seqOpen=false, lastTap=0;
+let seq=[], seqIdx=0, seqRound=0, seqState='idle', seqOpen=false, lastTap=0, replayLeft=3;
 startSeq.onclick=()=> startGame();
-function resetSeq(){ seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqOpen=false; seqRoundEl.textContent='0'; seqStatus.textContent='—'; setDisabled(true); }
-function startGame(){ resetSeq(); seqStatus.textContent='Guarda la sequenza'; nextRound(); }
-function stepDur(){ const v=seqSpeedSel.value; return v==='easy'?650:v==='hard'?330:480; }
-function pauseDur(){ const v=seqSpeedSel.value; return v==='easy'?260:v==='hard'?160:220; }
-function nextRound(){ seqRound++; seqRoundEl.textContent=String(seqRound); seqIdx=0; seq.push(1+Math.random()*4|0); playSeq(); }
-function playSeq(){ seqState='playback'; setDisabled(true); seqOpen=false; const dur=stepDur(), gap=pauseDur(); let i=0; const show=()=>{ if(i>=seq.length){ seqState='input'; setDisabled(false); seqIdx=0; seqOpen=true; seqStatus.textContent='Ripeti nell’ordine ('+seq.length+')'; return; } const v=seq[i], el=seqBoard.querySelector('.q[data-q=\"'+v+'\"]'); el.classList.add('active'); tick(); setTimeout(()=>{ el.classList.remove('active'); i++; setTimeout(show,gap); },dur);} ; show(); }
+replaySeq.onclick=()=>{ if(seqState==='input' && replayLeft>0){ replayLeft--; playSeq(true); seqHelp.textContent=`Rivedi sequenza (${replayLeft} rimaste)`; } };
+function resetSeq(){ seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqOpen=false; replayLeft=3; seqRoundEl.textContent='0'; seqHelp.textContent='Stato: —'; setDisabled(true); drawStrip(); }
+function startGame(){ resetSeq(); seqHelp.textContent='Pronti…'; countdown(()=>{ seqHelp.textContent='Guarda la sequenza'; nextRound(); }); }
+function stepDur(){ const v=seqSpeedSel.value; const teach=seqTeach.checked; const base = v==='easy'?650:v==='hard'?380:500; return teach? base+150 : base; }
+function pauseDur(){ const v=seqSpeedSel.value; const teach=seqTeach.checked; const base = v==='easy'?260:v==='hard'?160:220; return teach? base+120 : base; }
+function nextRound(){ seqRound++; seqRoundEl.textContent=String(seqRound); seqIdx=0; seq.push(1+Math.random()*4|0); drawStrip(); playSeq(); }
+function playSeq(isReplay=false){ seqState='playback'; setDisabled(true); seqOpen=false; const dur=stepDur(), gap=pauseDur(); let i=0; const show=()=>{ if(i>=seq.length){ seqState='input'; setDisabled(false); seqIdx=0; seqOpen=true; seqHelp.textContent='Ripeti nell’ordine — atteso: '+label(seq[0]); return; } const v=seq[i], el=seqBoard.querySelector('.q[data-q=\"'+v+'\"]'); el.classList.add('active'); setActiveDot(i); tick(); setTimeout(()=>{ el.classList.remove('active'); i++; setActiveDot(i); setTimeout(show,gap); },dur);} ; setActiveDot(0); show(); }
 function setDisabled(d){ seqBoard.querySelectorAll('.q').forEach(q=>q.classList.toggle('disabled',!!d)); }
+function drawStrip(){ seqStrip.innerHTML=''; seq.forEach((v,i)=>{ const d=document.createElement('div'); d.className='dot'; d.style.background = (v==1?'#d33':v==2?'#3d3':v==3?'#36f':'#dd3'); seqStrip.appendChild(d); }); }
+function setActiveDot(i){ const dots=[...seqStrip.children]; dots.forEach((d,k)=>d.classList.toggle('active',k===i)); }
+function label(v){ if(seqSymbols.checked){ return {1:'▲',2:'◆',3:'●',4:'■'}[v]; } return {1:'rosso',2:'verde',3:'blu',4:'giallo'}[v]; }
 seqBoard.addEventListener('pointerup',ev=>{ const now=performance.now(); if(now-lastTap<100) return; lastTap=now; const btn=ev.target.closest('.q'); if(!btn) return; ev.preventDefault(); press(+btn.dataset.q); },{passive:false});
 function press(val){ if(seqState!=='input'||!seqOpen) return; const exp=seq[seqIdx]; const el=seqBoard.querySelector('.q[data-q=\"'+val+'\"]'); el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),140);
-  if(val===exp){ good(); seqIdx++; if(seqIdx<seq.length){ seqStatus.textContent='Avanti… ('+(seqIdx+1)+'/'+seq.length+')'; } else { // round ok
+  if(val===exp){ good(); seqIdx++; if(seqIdx<seq.length){ seqHelp.textContent='OK — atteso: '+label(seq[seqIdx]); setActiveDot(seqIdx); } else { // round ok
     const gain=6, cost=3, food=Math.min(5,Math.floor(seq.length/2));
     S.ha=Math.min(100,S.ha+gain); S.e=Math.max(0,S.e-cost); S.h=Math.min(100,S.h+food);
     chip(chipHa,'🙂','+'+gain); chip(chipE,'⚡','-'+cost); if(food) chip(chipH,'🍎','+'+food);
     save(); render(); fanfare(); toast('🟥🟩 Sequence: round '+seqRound+' ok — +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food:''));
-    nextRound();
+    replayLeft=3; nextRound();
   } } else { bad(); const gain=2,cost=2,food=1; S.ha=Math.min(100,S.ha+gain); S.e=Math.max(0,S.e-cost); S.h=Math.min(100,S.h+food);
     chip(chipHa,'🙂','+'+gain); chip(chipE,'⚡','-'+cost); chip(chipH,'🍎','+'+food); save(); render();
-    toast('❌ Sequence: errore. Premio di consolazione — +Fel '+gain+' / -En '+cost+' / +Fame '+food); seqIdx=0; seq[seq.length-1]=1+Math.random()*4|0; playSeq(); } }
+    toast('❌ Sequence: errore. Premio di consolazione — +Fel '+gain+' / -En '+cost+' / +Fame '+food);
+    seqIdx=0; setActiveDot(0); seqHelp.textContent='Rivedi o riprova — atteso: '+label(seq[0]); }
+}
+function countdown(done){ let n=3; const id=setInterval(()=>{ seqHelp.textContent='Partenza: '+n; tone(500,90,.18); n--; if(n<0){ clearInterval(id); good(); done(); } },480); }
 </script>
 </body></html>
