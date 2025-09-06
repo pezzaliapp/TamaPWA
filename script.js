@@ -2,7 +2,7 @@
   'use strict';
 
   // --- Stato e costanti ---
-  const stateKey = 'tamaPWA_state_v2';
+  const stateKey = 'tamaPWA_state_v3';
 
   const initial = () => ({
     createdAt: Date.now(),
@@ -13,11 +13,24 @@
     energy: 80,
     cleanliness: 80,
     health: 100,
-    stage: 'egg',
+    stage: 'egg',    // egg, baby, teen, adult
     sleeping: false,
-    // Notifiche
-    notifMinutes: 360,    // ogni 6 ore
-    notifEnabled: false,
+
+    // Metriche per evoluzioni ramificate
+    metrics: {
+      feedCount: 0,
+      playCount: 0,
+      cleanCount: 0,
+      sleepMinutes: 0,
+      energySpentFromPlay: 0,
+      // per medie
+      hoursTracked: 0,
+      cleanlinessSum: 0,
+      happinessSum: 0
+    },
+
+    // Variante assegnata all'evoluzione
+    variant: null   // 'sportivo' | 'goloso' | 'pulito' | 'sognatore' | 'equilibrato'
   });
 
   let S = loadState();
@@ -27,7 +40,6 @@
   const HEALTH_DECAY = 6;
   const TICK_MS = 1000;
   const AGING_HOURS_PER_DAY = 24;
-  const NEEDS_THRESHOLD = 45; // sotto questa media notifichiamo
 
   // --- DOM ---
   const $ = (s)=>document.querySelector(s);
@@ -39,35 +51,16 @@
   const ageText    = $('#ageText');
   const stageBadge = $('#stageBadge');
   const lastSeen   = $('#lastSeenText');
-  const installBtn = $('#installBtn');
-
-  // Dialogs & buttons
+  const variantText= $('#variantText');
   const infoBtn    = $('#infoBtn');
   const howtoDlg   = $('#howto');
   const resetBtn   = $('#resetBtn');
-  const notifBtn   = $('#notifBtn');
-  const notifDlg   = $('#notifDialog');
-  const notifFreq  = $('#notifFreq');
-  const notifSave  = $('#notifSave');
-  const notifDisable = $('#notifDisable');
-
-  // Backup/Restore
-  const backupBtn  = $('#backupBtn');
-  const restoreBtn = $('#restoreBtn');
-  const restoreFile= $('#restoreFile');
-
-  // Game
-  const gameDlg = $('#gameDialog');
-  const startGameBtn = $('#startGameBtn');
-  const gameArea = $('#gameArea');
-  const scoreEl  = $('#score');
-  const timeEl   = $('#time');
+  const installBtn = $('#installBtn');
 
   // Azioni
   document.querySelectorAll('#actions [data-act]').forEach(btn=>{
     btn.addEventListener('click', ()=> doAction(btn.dataset.act));
   });
-
   infoBtn.addEventListener('click', ()=> howtoDlg.showModal());
   resetBtn.addEventListener('click', ()=> {
     if (confirm('Resetta il tuo pet? Operazione irreversibile.')) {
@@ -82,89 +75,6 @@
     if (!deferredPrompt) return;
     deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.hidden = true;
   });
-
-  // Notifiche - dialog
-  notifBtn.addEventListener('click', ()=>{
-    notifFreq.value = String(S.notifMinutes || 360);
-    notifDlg.showModal();
-  });
-  notifSave.addEventListener('click', async ()=>{
-    S.notifMinutes = parseInt(notifFreq.value,10) || 360;
-    const ok = await ensureNotifPermission();
-    S.notifEnabled = ok;
-    persist();
-    notifDlg.close();
-    if (ok) { scheduleLocalCheck(); alert('Promemoria attivati.'); }
-    else alert('Permesso notifiche negato.');
-  });
-  notifDisable.addEventListener('click', ()=>{
-    S.notifEnabled = false; persist(); notifDlg.close(); alert('Promemoria disattivati.');
-  });
-
-  // Backup
-  backupBtn.addEventListener('click', ()=>{
-    const data = JSON.stringify(S, null, 2);
-    const blob = new Blob([data], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `TamaPWA-backup-${new Date().toISOString().slice(0,19)}.json`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
-  // Restore
-  restoreBtn.addEventListener('click', ()=> restoreFile.click());
-  restoreFile.addEventListener('change', async (e)=>{
-    const file = e.target.files?.[0]; if (!file) return;
-    try{
-      const text = await file.text();
-      const obj = JSON.parse(text);
-      // sanifica minimale
-      S = Object.assign(initial(), obj);
-      persist(); render(true);
-      alert('Ripristino completato!');
-    }catch(err){ alert('File non valido.'); }
-    restoreFile.value = '';
-  });
-
-  // Minigioco (Catch!)
-  document.querySelector('[data-act="play"]').addEventListener('click', ()=>{
-    openGame();
-  });
-  let gameTimer=null, moveTimer=null, timeLeft=10, score=0;
-  startGameBtn.addEventListener('click', startGame);
-  function openGame(){ score=0; timeLeft=10; scoreEl.textContent='0'; timeEl.textContent='10'; gameArea.innerHTML=''; gameDlg.showModal(); }
-  function startGame(){
-    score=0; timeLeft=10; scoreEl.textContent=score; timeEl.textContent=timeLeft;
-    spawnTarget();
-    clearInterval(gameTimer); clearInterval(moveTimer);
-    gameTimer = setInterval(()=>{
-      timeLeft--; timeEl.textContent=timeLeft;
-      if (timeLeft<=0){ endGame(); }
-    },1000);
-    moveTimer = setInterval(()=> moveTarget(), 600);
-  }
-  function endGame(){
-    clearInterval(gameTimer); clearInterval(moveTimer);
-    // premio: felicità cresce con il punteggio, energia cala un po'
-    S.happiness = clamp(S.happiness + Math.min(5 + score*3, 40), 0, 100);
-    S.energy    = clamp(S.energy - Math.max(2, Math.floor(score/2)), 0, 100);
-    persist(); render();
-    alert(`Fine! Punteggio: ${score}. Felicità +${Math.min(5 + score*3, 40)}`);
-  }
-  function spawnTarget(){
-    const t = document.createElement('div');
-    t.className='target'; t.textContent='★';
-    t.addEventListener('click', ()=>{ score++; scoreEl.textContent=String(score); moveTarget(true); });
-    gameArea.appendChild(t);
-    moveTarget(true);
-  }
-  function moveTarget(first=false){
-    const t = gameArea.querySelector('.target');
-    if (!t) return;
-    const gw = gameArea.clientWidth, gh = gameArea.clientHeight;
-    const x = Math.random()*(gw-40), y = Math.random()*(gh-40);
-    t.style.transform = `translate(${x}px, ${y}px)`;
-    if (first) t.focus?.();
-  }
 
   // Ripresa dopo assenza
   applyOfflineDecay();
@@ -185,21 +95,33 @@
       S.energy      = clamp(S.energy      - DECAY_PER_HOUR.energy * dh, 0, 100);
       S.cleanliness = clamp(S.cleanliness - DECAY_PER_HOUR.cleanliness * dh, 0, 100);
     } else {
+      // dormendo: accumula minuti sonno
       S.energy      = clamp(S.energy + 12 * dh, 0, 100);
       S.hunger      = clamp(S.hunger - 2 * dh, 0, 100);
       S.happiness   = clamp(S.happiness - 1 * dh, 0, 100);
       S.cleanliness = clamp(S.cleanliness - 1 * dh, 0, 100);
+      S.metrics.sleepMinutes += dh * 60;
       if (S.energy >= 95) S.sleeping = false;
     }
 
+    // Medie per variant logic
+    S.metrics.hoursTracked += dh;
+    S.metrics.cleanlinessSum += S.cleanliness * dh;
+    S.metrics.happinessSum  += S.happiness   * dh;
+
+    // Salute
     const low = (S.hunger<35) || (S.happiness<35) || (S.energy<35) || (S.cleanliness<35);
     const good= (S.hunger>60) && (S.happiness>60) && (S.energy>60) && (S.cleanliness>60);
     if (good) S.health = clamp(S.health + HEALTH_REGEN * dh, 0, 100);
     else if (low) S.health = clamp(S.health - HEALTH_DECAY * dh, 0, 100);
 
+    // Età ed evoluzioni
     const hoursFromBirth = (now - S.createdAt) / 3600000;
     const days = Math.floor(hoursFromBirth / AGING_HOURS_PER_DAY);
-    if (days !== S.ageDays) { S.ageDays = days; updateStage(); }
+    if (days !== S.ageDays) {
+      S.ageDays = days;
+      updateStageAndVariant(); // assegna/aggiorna variante al passaggio
+    }
 
     S.lastTick = now;
     persist(); render();
@@ -210,36 +132,69 @@
       case 'feed':
         S.hunger = clamp(S.hunger + 28, 0, 100);
         S.cleanliness = clamp(S.cleanliness - 4, 0, 100);
+        S.metrics.feedCount++;
         emote('yum'); break;
       case 'play':
-        // apertura minigioco gestita sopra
-        break;
+        S.happiness = clamp(S.happiness + 20, 0, 100);
+        const spent = Math.min(8, S.energy);
+        S.energy    = clamp(S.energy - spent, 0, 100);
+        S.metrics.playCount++;
+        S.metrics.energySpentFromPlay += spent;
+        emote('play'); break;
       case 'sleep':
         S.sleeping = true; emote('sleep'); break;
       case 'clean':
         S.cleanliness = clamp(S.cleanliness + 30, 0, 100);
+        S.metrics.cleanCount++;
         emote('clean'); break;
     }
     persist(); render();
   }
 
-  function emote(kind){
-    const petSprite = document.querySelector('#petSprite');
-    switch(kind){
-      case 'yum':   petSprite.textContent = '(ˆڡˆ)'; break;
-      case 'play':  petSprite.textContent = '(＾▽＾)'; break;
-      case 'sleep': petSprite.textContent = '(-_-) zZ'; break;
-      case 'clean': petSprite.textContent = '(•ᴗ•)✨'; break;
-    }
-    setTimeout(()=>render(), 1000);
-  }
-
-  function updateStage(){
+  // --- Evoluzioni ramificate ---
+  function updateStageAndVariant(){
     const d = S.ageDays;
     if (d < 1) S.stage = 'egg';
     else if (d < 3) S.stage = 'baby';
-    else if (d < 7) S.stage = 'teen';
-    else S.stage = 'adult';
+    else if (d < 7) {
+      if (S.stage !== 'teen'){ // appena diventato teen
+        S.stage = 'teen';
+        if (!S.variant) S.variant = chooseVariant(); // assegna la prima volta
+      }
+    } else {
+      if (S.stage !== 'adult'){
+        S.stage = 'adult';
+        // alla maturità, eventualmente riconsolida la variante
+        S.variant = chooseVariant(true);
+      }
+    }
+  }
+
+  function chooseVariant(consolidate=false){
+    // Calcola punteggi
+    const hours = Math.max(0.0001, S.metrics.hoursTracked);
+    const avgClean = S.metrics.cleanlinessSum / hours;
+    const avgHappy = S.metrics.happinessSum  / hours;
+
+    const score = {
+      sportivo:    S.metrics.playCount * 2 + S.metrics.energySpentFromPlay * 0.8 + (avgHappy>70 ? 2:0),
+      goloso:      S.metrics.feedCount * 2 + Math.max(0, 70 - avgClean) * 0.3,
+      pulito:      S.metrics.cleanCount * 2 + avgClean * 0.4,
+      sognatore:   (S.metrics.sleepMinutes / 30), // 1 punto ogni 30 minuti di sonno
+      equilibrato: (avgHappy>65 ? 8:0) + (Math.abs(avgClean-60) < 10 ? 4:0)
+    };
+
+    // In consolidamento al livello adult, leggera inerzia verso la variante attuale
+    if (consolidate && S.variant && score[S.variant] !== undefined){
+      score[S.variant] += 3;
+    }
+
+    // Scegli max
+    let best = 'equilibrato', bestVal = -Infinity;
+    for (const [k,v] of Object.entries(score)){
+      if (v > bestVal){ bestVal = v; best = k; }
+    }
+    return best;
   }
 
   function render(first=false){
@@ -253,10 +208,11 @@
     moodText.textContent = 'Umore: ' + mood.label;
     ageText.textContent = 'Età: ' + S.ageDays + 'g';
     stageBadge.textContent = stageLabel(S.stage);
+    variantText.textContent = S.variant ? ('Variante: ' + variantLabel(S.variant)) : '';
 
     const petSprite = document.querySelector('#petSprite');
     if (!['(ˆڡˆ)','(＾▽＾)','(-_-) zZ','(•ᴗ•)✨'].includes(petSprite.textContent)){
-      petSprite.textContent = spriteFor(mood.code, S.stage, S.sleeping);
+      petSprite.textContent = spriteFor(mood.code, S.stage, S.sleeping, S.variant);
     }
 
     if (first){
@@ -266,19 +222,33 @@
     }
   }
 
-  function spriteFor(mood, stage, sleeping){
+  function spriteFor(mood, stage, sleeping, variant){
     if (sleeping) return '(-_-) zZ';
+    // sprite base per stage+umore
     const base = {
       egg:   {happy:'(•͈⌣•͈)︎', ok:'（・⊝・）', sad:'(・へ・)', sick:'(×_×)'},
       baby:  {happy:'(ᵔᴥᵔ)', ok:'(•ᴗ•)',     sad:'(・_・;)', sick:'(×_×)'},
       teen:  {happy:'(＾▽＾)', ok:'(・∀・)',   sad:'(￣ヘ￣;)', sick:'(×_×)'},
       adult: {happy:'(＾‿＾)', ok:'(・‿・)',   sad:'(；￣Д￣)', sick:'(×_×)'}
     }[stage] || {};
-    return base[mood] || '(・‿・)';
+    let sprite = base[mood] || '(・‿・)';
+    // piccola variazione estetica per variante
+    const flair = {
+      sportivo: '🏃',
+      goloso: '🍰',
+      pulito: '✨',
+      sognatore: '🌙',
+      equilibrato: '⚖️'
+    }[variant];
+    if (flair) sprite = sprite + ' ' + flair;
+    return sprite;
   }
 
   function stageLabel(s){
     return {egg:'Uovo', baby:'Baby', teen:'Teen', adult:'Adult'}[s] || 'Pet';
+  }
+  function variantLabel(v){
+    return {sportivo:'Sportivo', goloso:'Goloso', pulito:'Pulito', sognatore:'Sognatore', equilibrato:'Equilibrato'}[v] || '';
   }
 
   function getMood(){
@@ -303,13 +273,22 @@
       S.cleanliness = clamp(S.cleanliness - DECAY_PER_HOUR.cleanliness * dh, 0, 100);
     } else {
       S.energy = clamp(S.energy + 12 * dh, 0, 100);
+      S.metrics.sleepMinutes += dh * 60;
     }
+    // medie
+    S.metrics.hoursTracked += dh;
+    S.metrics.cleanlinessSum += S.cleanliness * dh;
+    S.metrics.happinessSum  += S.happiness   * dh;
+
+    // salute
     const low = (S.hunger<35) || (S.happiness<35) || (S.energy<35) || (S.cleanliness<35);
     const good= (S.hunger>60) && (S.happiness>60) && (S.energy>60) && (S.cleanliness>60);
     if (good) S.health = clamp(S.health + HEALTH_REGEN * dh, 0, 100);
     else if (low) S.health = clamp(S.health - HEALTH_DECAY * dh, 0, 100);
 
-    updateStage(); persist();
+    // stage/variant
+    updateStageAndVariant();
+    persist();
   }
 
   function humanize(ms){
@@ -345,42 +324,4 @@
       return initial();
     }
   }
-
-  // ===== Notifiche locali (senza server) =====
-  async function ensureNotifPermission(){
-    if (!('Notification' in window)) return false;
-    if (Notification.permission === 'granted') return true;
-    if (Notification.permission === 'denied') return false;
-    const res = await Notification.requestPermission();
-    return res === 'granted';
-  }
-
-  // controlla periodicamente e notifica se i bisogni sono bassi
-  let notifInterval = null;
-  function scheduleLocalCheck(){
-    if (notifInterval) clearInterval(notifInterval);
-    if (!S.notifEnabled) return;
-    const periodMs = (S.notifMinutes || 360) * 60 * 1000;
-    notifInterval = setInterval(checkAndNotify, periodMs);
-  }
-
-  async function checkAndNotify(){
-    if (!S.notifEnabled) return;
-    const avg = (S.hunger + S.happiness + S.energy + S.cleanliness)/4;
-    if (avg < NEEDS_THRESHOLD){
-      const text = 'Il tuo Tama ha bisogno di attenzioni!';
-      try{
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg && Notification.permission === 'granted'){
-          reg.showNotification('TamaPWA', {
-            body: text, icon: 'icon-192.png', badge: 'icon-192.png'
-          });
-        }
-      }catch{ /* ignore */ }
-    }
-  }
-
-  // avvia il ciclo di controllo quando la pagina è caricata
-  if (S.notifEnabled) scheduleLocalCheck();
-
 })();

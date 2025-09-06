@@ -27,6 +27,8 @@ header, footer{
 
 h1{ font-size: 20px; margin:0; letter-spacing:.5px; }
 
+.muted{ color: var(--muted); font-size: .95em; }
+
 main{ width:min(920px, 100%); margin: 0 auto; padding: 12px; flex:1; }
 
 #petCard{
@@ -58,7 +60,7 @@ main{ width:min(920px, 100%); margin: 0 auto; padding: 12px; flex:1; }
   line-height:1; user-select:none;
 }
 
-#moodText, #ageText, #lastSeenText{ margin:6px 0; color: var(--muted); }
+#moodText, #ageText, #lastSeenText, #variantText{ margin:6px 0; color: var(--muted); }
 
 #stats{
   display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:16px 0;
@@ -86,28 +88,3 @@ dialog{
   padding:18px; width:min(560px, 90vw);
 }
 dialog::backdrop{ background:rgba(0,0,0,.6); }
-
-/* Minigioco */
-#gameArea{
-  margin: 10px 0;
-  width:min(520px, 90vw);
-  height: 300px;
-  border:1px dashed #2b2f3a;
-  border-radius:10px;
-  position:relative;
-  background:#0f1320;
-  overflow:hidden;
-}
-.target{
-  position:absolute;
-  width:40px; height:40px;
-  border-radius:50%;
-  background:#7cf3a0;
-  display:grid; place-items:center;
-  user-select:none;
-  cursor:pointer;
-  font-weight:bold;
-}
-#gameHUD{
-  display:flex; gap:12px; align-items:center; justify-content:space-between;
-}
