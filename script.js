@@ -47,7 +47,7 @@
   const initial=()=>({createdAt:Date.now(),last:Date.now(),age:0,stage:'egg',
     h:80,ha:80,e:80,c:80,he:100,sleep:false, soundOn:true,
     metrics:{feed:0,play:0,clean:0,sleepMin:0,energySpent:0,hours:0,cleanSum:0,happySum:0},
-    variant:null, demo:false, sleepStart:null
+    variant:null, demo:false, sleepStart:null, scores:{sequenceBest:0, reflexBest:null, catchBest:0}
   });
   let S=load();
 
@@ -125,7 +125,9 @@
     S.ha = clamp(S.ha + gain, 0, 100);
     S.e  = clamp(S.e - cost, 0, 100);
     S.metrics.play++; S.metrics.energySpent += cost;
-    save(); render(); beep(620,140); setTimeout(()=>beep(740,140),160); alert('Fine! Punteggio: '+pts+' — Felicità +'+gain+', Energia -'+cost);
+    save(); render(); beep(620,140); setTimeout(()=>beep(740,140),160); if (!S.scores) S.scores = {sequenceBest:0, reflexBest:null, catchBest:0};
+    if (pts > (S.scores.catchBest||0)) { S.scores.catchBest = pts; toast('🏆 Record Catch: '+pts); }
+    
   }
 
   
@@ -174,7 +176,7 @@
       const t = Math.round(performance.now() - rStart);
       rState='scored';
       rTimeEl.textContent = String(t);
-      rBest = (rBest==null)? t : Math.min(rBest, t);
+      const oldBest = rBest; rBest = (rBest==null)? t : Math.min(rBest, t); if (oldBest==null || rBest < oldBest){ toast('🏆 Record Reflex: '+rBest+' ms'); }
       rBestEl.textContent = String(rBest);
       reflexArea.className='ready'; reflexArea.textContent = t+' ms';
       // ricompense: veloce = più felicità, costo energia fisso
@@ -290,7 +292,15 @@
         setTimeout(nextSeqRound, 650);
       }
     } else {
-      seqStatus.textContent='Errore!';
+      // Partial reward based on progress this round
+      const prog = seqIdx; // how many correct taps in current round
+      const gain = Math.min(4, Math.floor(prog/2)); // small happiness
+      const food = prog>=2 ? 1 : 0;
+      if (gain>0) S.ha = clamp(S.ha + gain, 0, 100);
+      if (food>0) S.h  = clamp(S.h  + food, 0, 100);
+      save(); render();
+      toast('❌ Sequence: errore — +' + (gain>0? ('Fel '+gain) : '0') + (food? ' / +Fame '+food : ''));
+      seqStatus.textContent='Errore! Round '+seqRound+' non completato.';
       seqState='idle'; seqInputOpen=false; setQDisabled(true);
       beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
     }
