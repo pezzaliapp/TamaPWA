@@ -1,17 +1,28 @@
-# TamaPWA — Stable (Auto‑Update)
+# TamaPWA — PWA con Auto-Update
 
-Questa build include l’**auto‑update PWA** con banner “Nuova versione disponibile — Aggiorna”.
+Questa è la versione PWA della build che funziona, con:
+- varianti, due minigiochi (Catch! e Simon), suoni 8-bit, modalità demo;
+- **Service Worker** con **auto-update** (banner "Nuova versione disponibile — Aggiorna").
 
-## Come funziona
-- Il Service Worker scarica la nuova versione in background.
-- Quando è pronta, compare un banner in basso: cliccando **Aggiorna** inviamo `SKIP_WAITING` e la pagina si ricarica con i file nuovi.
+## Deploy (GitHub Pages)
+1. Crea la repo (es. `TamaPWA`) e carica questi file nella **root**:
+   ```
+   index.html
+   style.css
+   script.js
+   manifest.json
+   service-worker.js
+   icon-192.png
+   icon-512.png
+   ```
+2. Attiva GitHub Pages su `main` / root.
+3. Apri la pagina. Alla prima visita cache offline pronta.
 
-## Note per il rilascio
-- **Bump** della costante `CACHE` in `service-worker.js` a ogni release.
-- Opzionale: `reg.update()` gira ogni ora e quando ritorni alla tab.
+## Aggiornamenti futuri
+- **Bumpare la costante `CACHE`** in `service-worker.js` (es. `...-v2` → `...-v3`).
+- Il banner apparirà quando la nuova versione è pronta; clic su **Aggiorna** per ricaricare l'app.
 
-## Extra
-- Resta la **Modalità Demo** (1 min = 1 giorno) per test veloce dell’evoluzione.
-- Minigioco **Catch!** funzionante.
+## Modalità Demo
+- Bottone **⏱️ Demo**: ON = 1 minuto = 1 giorno per vedere subito le evoluzioni.
 
 MIT © 2025

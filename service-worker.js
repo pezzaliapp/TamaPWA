@@ -1,4 +1,5 @@
-const CACHE = 'tama-pwa-stable-update-v2'; // bump per release
+// Service Worker con auto-update (click-to-refresh)
+const CACHE = 'tama-pwa-auto-v1'; // BUMPA questa stringa a ogni release
 const ASSETS = [
   './',
   './index.html',
@@ -13,7 +14,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
     await c.addAll(ASSETS);
-    self.skipWaiting(); // pronto per attivarsi appena richiesto
+    self.skipWaiting();
   })());
 });
 
@@ -43,7 +44,6 @@ self.addEventListener('fetch', (e) => {
   })());
 });
 
-// messaggio dalla pagina per attivare subito il nuovo SW
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
