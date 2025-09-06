@@ -111,7 +111,8 @@
   }
 
   
-  // ===== Simon game (robust state machine) =====
+  
+  // ===== Simon game (robust input) =====
   const dlgSimon=$('#gSimon'), startSimon=$('#startSimon'), statusEl=$('#status'), roundEl=$('#round');
   const pads=Array.from(document.querySelectorAll('.pad'));
   simonBtn.onclick=()=>{ dlgSimon.showModal(); };
@@ -119,12 +120,14 @@
   let simState = 'idle'; // 'idle' | 'playback' | 'input'
   let sequence=[], idx=0, round=0;
   let playbackTimer=null;
+  let inputOpen=false;
+  let lastPressTs=0;
 
   startSimon.onclick=()=> startSimonGame();
 
   function startSimonGame(){
     clearTimeout(playbackTimer);
-    sequence=[]; round=0; idx=0;
+    sequence=[]; round=0; idx=0; inputOpen=false;
     statusEl.textContent='Guarda la sequenza';
     setPadsDisabled(true);
     nextRound();
@@ -139,7 +142,7 @@
   function playSequence(){
     simState='playback';
     setPadsDisabled(true);
-    // play steps one by one
+    inputOpen=false;
     let i=0;
     const step = () => {
       if (i >= sequence.length){
@@ -147,6 +150,7 @@
         setPadsDisabled(false);
         idx = 0;
         statusEl.textContent = 'Tocca i pad in ordine (1/' + sequence.length + ')';
+        setTimeout(()=>{ inputOpen=true; }, 80); // mini delay per evitare race
         return;
       }
       const val = sequence[i];
@@ -163,16 +167,21 @@
     pads.forEach(p=>{ p.classList.toggle('disabled', !!disabled); });
   }
 
+  const colorName = (v)=>({1:'rosso',2:'verde',3:'blu',4:'giallo'})[v]||String(v);
+
   pads.forEach(el=>{
-    el.addEventListener('pointerdown', ev=>{
+    el.addEventListener('pointerup', ev=>{
       ev.preventDefault();
+      const now = performance.now();
+      if (now - lastPressTs < 120) return; // anti-doppio evento
+      lastPressTs = now;
       const val = Number(el.dataset.pad);
       handlePad(val);
-    });
+    }, {passive:false});
   });
 
   function handlePad(val){
-    if (simState !== 'input') return; // ignore during playback
+    if (simState !== 'input' || !inputOpen) return; // ignora se non in input
     const expected = sequence[idx];
     flashPad(pads[val-1]); beep([440,520,660,780][val-1], 90);
     if (val === expected){
@@ -185,14 +194,14 @@
         S.e  = clamp(S.e - 3, 0, 100);
         save(); render();
         statusEl.textContent='Bravo! Prossimo round...';
-        simState='idle';
+        simState='idle'; inputOpen=false;
         setPadsDisabled(true);
         setTimeout(nextRound, 650);
       }
     } else {
       // error
-      statusEl.textContent='Errore! Fine partita.';
-      simState='idle';
+      statusEl.textContent='Errore! Atteso: ' + colorName(expected) + ' — Hai premuto: ' + colorName(val);
+      simState='idle'; inputOpen=false;
       setPadsDisabled(true);
       beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
     }
