@@ -1,108 +1,137 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>TamaPWA — Stable (Auto‑Update)</title>
-  <meta name="theme-color" content="#222" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TamaPWA — Debug Min</title>
+<style>
+  *{box-sizing:border-box} body{font-family:system-ui,Segoe UI,Roboto,Inter,sans-serif;margin:0;background:#0e0f12;color:#eaeaf0}
+  main{width:min(900px,100%);margin:0 auto;padding:14px}
+  h1{font-size:18px;margin:10px 0}
+  #pet{position:relative;display:grid;place-items:center;width:min(60vw,320px);aspect-ratio:1/1;margin:12px auto;background:#101826;border:1px solid #2b2f3a;border-radius:12px}
+  #pet span{font-size:clamp(28px,10vw,56px)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+  button{padding:10px 14px;border-radius:10px;border:1px solid #2b2f3a;background:#202432;color:#eaeaf0;cursor:pointer;font-weight:600}
+  /* mini game area */
+  #area{position:relative;width:min(520px,95vw);height:320px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;overflow:hidden}
+  .t{position:absolute;width:56px;height:56px;border-radius:50%;background:#7cf3a0;display:grid;place-items:center;font-weight:700;color:#0b1220;user-select:none;touch-action:manipulation}
+  .t:active{transform:scale(.9)}
+  #hud{display:flex;justify-content:space-between;align-items:center;width:min(520px,95vw);margin:0 auto}
+</style>
 </head>
 <body>
-  <header>
-    <h1>TamaPWA — Stable</h1>
-    <div class="right">
-      <button id="demoBtn">⏱️ Demo: OFF</button>
-      <button id="installBtn" hidden>Installa</button>
-    </div>
-  </header>
-
   <main>
-    <section id="petCard">
-      <div id="stageBadge">Uovo</div>
-      <div id="pet" aria-live="polite" aria-label="Creatura virtuale">
-        <div id="petSprite">（・⊝・）</div>
-      </div>
-      <div id="moodText">Umore: Curioso</div>
-      <div id="ageText">Età: 0g</div>
-      <div id="lastSeenText"></div>
-    </section>
+    <h1>TamaPWA — Debug Min</h1>
+    <div class="row">
+      <button id="demo">⏱️ Demo: OFF</button>
+      <button id="play">🎯 Gioca</button>
+      <button id="reset">♻️ Reset</button>
+    </div>
 
-    <section id="stats">
-      <div class="stat"><label>Fame</label><div class="bar"><div id="barHunger"></div></div></div>
-      <div class="stat"><label>Felicità</label><div class="bar"><div id="barHappy"></div></div></div>
-      <div class="stat"><label>Energia</label><div class="bar"><div id="barEnergy"></div></div></div>
-      <div class="stat"><label>Pulizia</label><div class="bar"><div id="barClean"></div></div></div>
-      <div class="stat"><label>Salute</label><div class="bar"><div id="barHealth"></div></div></div>
-    </section>
+    <div id="pet"><span id="sprite">（・⊝・）</span></div>
+    <p id="info" style="text-align:center;margin:0 0 8px">Età: <b id="age">0</b>g — Umore: <b id="mood">Curioso</b> — Stadio: <b id="stage">Uovo</b></p>
 
-    <section id="actions">
-      <button data-act="feed" class="primary">🍎 Nutri</button>
-      <button data-act="play">🎯 Gioca</button>
-      <button data-act="sleep">😴 Dormi</button>
-      <button data-act="clean">🧽 Pulisci</button>
-      <button id="infoBtn">❓ Info</button>
-      <button id="resetBtn" class="danger">♻️ Reset</button>
-    </section>
-
-    <!-- Catch game -->
-    <dialog id="gameDialog">
-      <h3>🎯 Catch! (15s)</h3>
-      <p class="muted small">Tocca il bersaglio che si sposta per fare punti.</p>
-      <div id="gameArea" tabindex="0" aria-label="Area di gioco"></div>
-      <div id="gameHUD">
-        <span>Punteggio: <b id="score">0</b></span>
-        <span>Tempo: <b id="time">15</b>s</span>
-        <button id="startGameBtn" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
-
-    <dialog id="howto">
-      <h2>Info</h2>
-      <ul>
-        <li><b>Demo</b>: “⏱️ Demo” = 1 min = 1 giorno → evoluzione rapida.</li>
-        <li><b>Catch!</b>: clicca la stella che si muove per 15s → ottieni punti.</li>
-        <li>La PWA si <b>aggiorna in automatico</b> con banner “Aggiorna”.</li>
-      </ul>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
+    <div id="hud"><div>Punti: <b id="pts">0</b></div><div>Tempo: <b id="t">0</b>s</div></div>
+    <div id="area" aria-label="Area di gioco"></div>
   </main>
 
-  <footer>
-    <small>© 2025 TamaPWA — Stable build (Auto‑Update)</small>
-  </footer>
+<script>
+(() => {
+  'use strict';
+  const stateKey='tama_min_debug';
+  const initial=()=>({createdAt:Date.now(),last:Date.now(),age:0,stage:'egg',h:80,ha:80,e:80,c:80});
+  let S=load();
 
-  <script src="script.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').then((reg) => {
-        // Update banner logic
-        reg.addEventListener('updatefound', () => {
-          const nw = reg.installing;
-          if (!nw) return;
-          nw.addEventListener('statechange', () => {
-            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-              showUpdateToast(reg);
-            }
-          });
-        });
-        // periodic checks
-        setInterval(() => reg.update(), 60*60*1000);
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') reg.update();
-        });
-      });
-      // reload once the new SW takes control
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
-      });
+  const spriteEl = document.getElementById('sprite');
+  const ageEl = document.getElementById('age');
+  const stageEl = document.getElementById('stage');
+  const moodEl = document.getElementById('mood');
+  const demoBtn = document.getElementById('demo');
+  const resetBtn = document.getElementById('reset');
+  const playBtn = document.getElementById('play');
+
+  let demo=false; demoBtn.onclick=()=>{ demo=!demo; demoBtn.textContent= demo?'⏱️ Demo: ON':'⏱️ Demo: OFF'; };
+
+  resetBtn.onclick=()=>{ if(confirm('Reset?')){ S=initial(); save(); render(true);} };
+
+  playBtn.onclick=()=> startGame();
+
+  function tick(){
+    const now=Date.now(), dt=(now-S.last)/1000; if(dt<=0){S.last=now;return;}
+    const hoursPerDay = demo ? (1/60) : 24;
+    const days = Math.floor((now - S.createdAt)/3600000 / hoursPerDay);
+    if(days!==S.age){ S.age=days; updateStage(); }
+    S.last=now; save(); render();
+  }
+  setInterval(tick, 500);
+
+  function updateStage(){
+    if (S.age<1) S.stage='egg';
+    else if (S.age<3) S.stage='baby';
+    else if (S.age<7) S.stage='teen';
+    else S.stage='adult';
+  }
+
+  function render(first=false){
+    ageEl.textContent=S.age;
+    stageEl.textContent=({egg:'Uovo',baby:'Baby',teen:'Teen',adult:'Adult'})[S.stage];
+    const avg=(S.h+S.ha+S.e+S.c)/4; const mood=avg>=75?'Felice':avg>=45?'Curioso':'Triste';
+    moodEl.textContent=mood;
+    if (!['★','💤','✨','🍎'].includes(spriteEl.textContent)){
+      const faces={egg:{happy:'(•͈⌣•͈)︎',ok:'（・⊝・）',sad:'(・へ・)'},baby:{happy:'(ᵔᴥᵔ)',ok:'(•ᴗ•)',sad:'(・_・;)'},teen:{happy:'(＾▽＾)',ok:'(・∀・)',sad:'(￣ヘ￣;)'},adult:{happy:'(＾‿＾)',ok:'(・‿・)',sad:'(；￣Д￣)'}}[S.stage];
+      spriteEl.textContent=faces[mood==='Felice'?'happy':mood==='Curioso'?'ok':'sad']||'(・‿・)';
     }
-  </script>
+  }
+
+  function save(){ localStorage.setItem(stateKey, JSON.stringify(S)); }
+  function load(){ try{ const r=localStorage.getItem(stateKey); return r?Object.assign(initial(), JSON.parse(r)):initial(); }catch{ return initial(); } }
+
+  // --------- Minimal Catch game (works everywhere) ---------
+  const area = document.getElementById('area');
+  const ptsEl = document.getElementById('pts');
+  const tEl = document.getElementById('t');
+  let timer=null, mover=null, left=0, topv=0, pts=0, time=0;
+  function startGame(){
+    // clear old
+    clearInterval(timer); clearInterval(mover); area.innerHTML='';
+    pts=0; time=15; ptsEl.textContent=pts; tEl.textContent=time;
+    const target=document.createElement('div');
+    target.className='t'; target.textContent='★';
+    target.style.left='0px'; target.style.top='0px';
+    // robust hit handler
+    const hit=()=>{ pts++; ptsEl.textContent=pts; move(true); };
+    target.addEventListener('pointerdown', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); hit(); });
+    target.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); hit(); });
+    area.appendChild(target);
+    move(true);
+
+    mover=setInterval(()=>move(false), 600);
+    timer=setInterval(()=>{
+      time--; tEl.textContent=time;
+      if(time<=0){ clearInterval(timer); clearInterval(mover); end(); }
+    }, 1000);
+  }
+  function move(first){
+    const t = area.querySelector('.t'); if(!t) return;
+    const gw = area.clientWidth, gh = area.clientHeight;
+    const tw = t.offsetWidth, th = t.offsetHeight;
+    left = Math.random()*(gw-tw);
+    topv = Math.random()*(gh-th);
+    t.style.left = left+'px';
+    t.style.top  = topv+'px';
+    if(first && t.focus) t.focus();
+  }
+  function end(){
+    alert('Fine! Punteggio: '+pts);
+    // Ricompensa semplice
+    S.ha = Math.min(100, S.ha + Math.min(5 + pts*2, 40));
+    S.e  = Math.max(0,    S.e  - Math.max(2, Math.floor(pts/2)));
+    save(); render();
+  }
+
+  // first paint
+  render(true);
+})();
+</script>
 </body>
 </html>
