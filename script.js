@@ -197,62 +197,51 @@
     alert('Reflex finito! Best: ' + (rBest==null?'—':rBest+' ms'));
   }
 
-  // ===== Sequence (Simon-like) =====
+  
+  // ===== Sequence (Simon-like) — v11 robust =====
   const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
   const seqBtn=$('#sequence'), seqBoard=document.getElementById('seqBoard'); const seqSymbols=$('#seqSymbols');
   const qs = Array.from(document.querySelectorAll('#seqBoard .q'));
-  // Toggle symbols mode
-  function updateSeqMode(){
-    if(!seqBoard) return;
-    if (seqSymbols.checked){
-      seqBoard.classList.add('symbols');
-      // set distinct glyphs
-      qs[0].querySelector('span').textContent='▲';
-      qs[1].querySelector('span').textContent='◆';
-      qs[2].querySelector('span').textContent='●';
-      qs[3].querySelector('span').textContent='■';
-    } else {
-      seqBoard.classList.remove('symbols');
-      // clear or set faint squares
-      qs.forEach(q=>{ q.querySelector('span').textContent='■'; });
-    }
-  }
-  // apply on open and on toggle
-  if (seqSymbols) {
-    seqSymbols.addEventListener('change', updateSeqMode);
-    updateSeqMode();
-  }
-
-  seqBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgSeq.showModal(); };
+  seqBtn.onclick=()=>{ dlgSeq.showModal(); resetSeqUI(); };
 
   let seqState='idle'; // 'idle' | 'playback' | 'input'
   let seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
 
+  function resetSeqUI(){
+    clearTimeout(seqTimer);
+    seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqInputOpen=false;
+    if (seqRoundEl) seqRoundEl.textContent = '0';
+    if (seqStatus) seqStatus.textContent = '—';
+    setQDisabled(true);
+  }
+
   startSeq.onclick=()=> startSeqGame();
 
   function startSeqGame(){
-    clearTimeout(seqTimer);
-    seq=[]; seqRound=0; seqIdx=0; seqInputOpen=false;
-    seqStatus.textContent='Guarda la sequenza';
-    setQDisabled(true);
-    nextSeqRound();
+    resetSeqUI();
+    if (seqStatus) seqStatus.textContent='Guarda la sequenza';
+    nextSeqRound(); // this will set seqRound=1 and update UI
   }
+
   function nextSeqRound(){
-    seqRound++; seqRoundEl.textContent=String(seqRound);
+    seqRound++; // increment first so UI shows 1 on first round
+    if (seqRoundEl) seqRoundEl.textContent=String(seqRound);
     seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
     playSeq();
   }
+
   function playSeq(){
     seqState='playback'; setQDisabled(true); seqInputOpen=false;
     let i=0;
     const step = () => {
       if(i>=seq.length){
-        seqState='input'; setQDisabled(false); seqIdx=0; seqStatus.textContent='Tocca in ordine (1/'+seq.length+')';
+        seqState='input'; setQDisabled(false); seqIdx=0;
+        if (seqStatus) seqStatus.textContent='Tocca in ordine (1/'+seq.length+')';
         setTimeout(()=>{ seqInputOpen=true; }, 80);
         return;
       }
       const val=seq[i], el=qs[val-1];
-      flashQ(el); playQSound(val, seqSymbols.checked);
+      flashQ(el); playQSound(val, seqSymbols && seqSymbols.checked);
       i++; seqTimer=setTimeout(step, 520);
     }; step();
   }
@@ -262,12 +251,16 @@
   }
   function playQSound(val, symbols){
     if(symbols){
-      // per i simboli, facciamo una scala diversa
       beep([330,440,554,659][val-1], 160);
     } else {
       beep([440,520,660,780][val-1], 160);
     }
   }
+  const colorName = (v)=>({1: (seqSymbols && seqSymbols.checked?'▲':'rosso'),
+                           2: (seqSymbols && seqSymbols.checked?'◆':'verde'),
+                           3: (seqSymbols && seqSymbols.checked?'●':'blu'),
+                           4: (seqSymbols && seqSymbols.checked?'■':'giallo')})[v]||String(v);
+
   qs.forEach(el=>{
     el.addEventListener('pointerup', (ev)=>{
       ev.preventDefault();
@@ -275,32 +268,43 @@
       const val=Number(el.dataset.q); handleQ(val);
     }, {passive:false});
   });
+
   function handleQ(val){
     if(seqState!=='input' || !seqInputOpen) return;
     const expected = seq[seqIdx];
-    flashQ(qs[val-1]); playQSound(val, seqSymbols.checked);
+    flashQ(qs[val-1]); playQSound(val, seqSymbols && seqSymbols.checked);
     if(val===expected){
       seqIdx++;
       if(seqIdx<seq.length){
-        seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')';
+        if (seqStatus) seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')';
       } else {
-        S.ha = clamp(S.ha + 6, 0, 100);
-        S.e  = clamp(S.e - 3, 0, 100);
+        // SUCCESS: award for completing this round
+        const gain = 6; const cost = 3; const food = Math.min(5, Math.floor(seq.length/2));
+        S.ha = clamp(S.ha + gain, 0, 100);
+        S.e  = clamp(S.e - cost, 0, 100);
+        S.h  = clamp(S.h + food, 0, 100);
+        // Best tracking
+        if (!S.scores) S.scores = {sequenceBest:0, reflexBest:null, catchBest:0};
+        if (seqRound > (S.scores.sequenceBest||0)) {
+          S.scores.sequenceBest = seqRound;
+          toast('🏆 Record Sequence: Round '+seqRound+'!');
+        }
         save(); render();
-        seqStatus.textContent='Bravo! Prossimo round...';
+        toast('🟥🟩 Sequence: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food : ''));
+        if (seqStatus) seqStatus.textContent='Bravo! Prossimo round...';
         seqState='idle'; seqInputOpen=false; setQDisabled(true);
         setTimeout(nextSeqRound, 650);
       }
     } else {
-      // Partial reward based on progress this round
-      const prog = seqIdx; // how many correct taps in current round
-      const gain = Math.min(4, Math.floor(prog/2)); // small happiness
+      // FAILURE: partial reward based on progress
+      const prog = seqIdx; // correct taps this round
+      const gain = Math.min(4, Math.floor(prog/2));
       const food = prog>=2 ? 1 : 0;
       if (gain>0) S.ha = clamp(S.ha + gain, 0, 100);
       if (food>0) S.h  = clamp(S.h  + food, 0, 100);
       save(); render();
-      toast('❌ Sequence: errore — +' + (gain>0? ('Fel '+gain) : '0') + (food? ' / +Fame '+food : ''));
-      seqStatus.textContent='Errore! Round '+seqRound+' non completato.';
+      toast('❌ Sequence: atteso '+colorName(expected)+', hai premuto '+colorName(val)+' — +' + (gain>0? ('Fel '+gain) : '0') + (food? ' / +Fame '+food : ''));
+      if (seqStatus) seqStatus.textContent='Errore! Round '+seqRound+' non completato.';
       seqState='idle'; seqInputOpen=false; setQDisabled(true);
       beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
     }

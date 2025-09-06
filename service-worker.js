@@ -1,5 +1,5 @@
 // Service Worker con auto-update, cache dinamica sprite
-const CACHE = 'tama-pwa-sprites-v10'; // bump ad ogni release
+const CACHE = 'tama-pwa-sprites-v11'; // bump ad ogni release
 const ASSETS = [
   './',
   './index.html',
