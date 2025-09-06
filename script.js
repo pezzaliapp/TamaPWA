@@ -290,7 +290,10 @@
         setTimeout(nextSeqRound, 650);
       }
     } else {
-      seqStatus.textContent='Errore! Riparte il round'; seqState='idle'; seqInputOpen=false; setQDisabled(true); beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240); setTimeout(playSeq, 800);}
+      seqStatus.textContent='Errore!';
+      seqState='idle'; seqInputOpen=false; setQDisabled(true);
+      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
+    }
   }
 // ===== Loop / decay / variant logic =====
   const DECAY = {h:6, ha:4, e:5, c:3};
@@ -405,38 +408,3 @@
   render(true);
   ensureAudioUnlocked();
 })();
-  function toast(msg){
-    let wrap = document.getElementById('toasts'); 
-    if(!wrap){ wrap = document.createElement('div'); wrap.id='toasts'; document.body.appendChild(wrap); }
-    const el = document.createElement('div'); el.className='toast'; el.textContent = msg;
-    wrap.appendChild(el);
-    setTimeout(()=>{ el.classList.add('hide'); }, 1400);
-    setTimeout(()=>{ el.remove(); }, 1800);
-  }
-
-  function grantRewards(delta, label){
-  if (typeof delta.ha==='number') { S.ha = clamp(S.ha + delta.ha, 0, 100); showChip('chipHa', (delta.ha>0?'🙂 +':'🙂 ')+delta.ha); }
-  if (typeof delta.e ==='number') { S.e  = clamp(S.e  + delta.e , 0, 100); showChip('chipE',  (delta.e>0?'⚡ +':'⚡ ')+delta.e); }
-  if (typeof delta.h ==='number') { S.h  = clamp(S.h  + delta.h , 0, 100); showChip('chipH',  (delta.h>0?'🍎 +':'🍎 ')+delta.h); }
-  if (typeof delta.c ==='number') { S.c  = clamp(S.c  + delta.c , 0, 100); showChip('chipC',  (delta.c>0?'🧼 +':'🧼 ')+delta.c); }
-  save(); render(); if(label){ toast(label); addLog(label); }
-}catch{}
-  }
-
-function showChip(id, text){
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.textContent = text;
-  el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 1200);
-}
-
-function addLog(msg){
-  const wrap = document.getElementById('log');
-  if(!wrap) return;
-  const div = document.createElement('span');
-  div.className='entry';
-  const t = new Date(); const hh = t.getHours().toString().padStart(2,'0'); const mm = t.getMinutes().toString().padStart(2,'0');
-  div.textContent = `[${hh}:${mm}] ` + msg;
-  wrap.prepend(div); while(wrap.children.length>6) wrap.lastChild.remove();
-}

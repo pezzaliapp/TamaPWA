@@ -73,22 +73,3 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 #seqBoard.symbols .q3{ background:#686868; }
 #seqBoard.symbols .q4{ background:#777777; }
 #seqBoard.symbols .q span{ color:#eaeaf0; font-size:48px; }
-
-
-/* Toasts */
-#toasts{ position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px;
-  display: flex; flex-direction: column; gap: 8px; z-index: 9999; pointer-events: none; }
-#toasts .toast{ pointer-events:auto; padding: 10px 12px; border-radius: 10px; 
-  border: 1px solid #2b2f3a; background: #1a1c22; color: #eaeaf0;
-  box-shadow: 0 6px 24px rgba(0,0,0,.35); transition: .3s ease; }
-#toasts .toast.hide{ opacity: 0; transform: translateY(6px); }
-
-/* Chips + log */
-
-.stat{ position: relative; }
-.chip{ position:absolute; right:6px; top:6px; background:#1a1c22; border:1px solid #2b2f3a; 
-  border-radius:999px; padding:2px 8px; font-size:12px; opacity:0; transform:translateY(6px); transition:.3s; }
-.chip.show{ opacity:1; transform:translateY(0); }
-
-#log{ margin-top:8px; min-height:1.2em; display:flex; gap:12px; flex-wrap:wrap; }
-#log .entry{ opacity:.9; }
