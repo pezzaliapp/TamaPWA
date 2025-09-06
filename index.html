@@ -1,116 +1,222 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TamaPWA — PWA con Sprite</title>
-  <meta name="theme-color" content="#222" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=8" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>TamaPWA — Single-file v19</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--bg:#0d1117;--panel:#111827;--muted:#9aa0a6;--fg:#eaeaf0;--acc:#46b478;--bad:#b84d4d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
+main,header{max-width:980px;margin:0 auto;padding:12px}
+header{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+h1{font-size:18px;margin:0}
+.badge{font-size:12px;color:var(--muted)}
+button{background:#19202c;color:var(--fg);border:1px solid #2b2f3a;border-radius:10px;padding:8px 12px;cursor:pointer}
+button.primary{outline:2px solid #2b2f3a}
+#pet{display:grid;place-items:center;height:320px;background:var(--panel);border-radius:14px;border:1px solid #2b2f3a}
+#petImg{width:192px;height:192px;image-rendering:pixelated}
+#meta{color:var(--muted);font-size:12px}
+#stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
+.card{background:var(--panel);border:1px solid #2b2f3a;border-radius:12px;padding:6px}
+.bar{height:6px;background:#161b26;border-radius:12px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#7cf3a0)}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:99999;pointer-events:none}
+.toast{pointer-events:auto;padding:8px 12px;border:1px solid #2b2f3a;background:#1a1c22;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.35);transition:.3s ease}
+dialog{border:1px solid #2b2f3a;border-radius:12px;background:#0f1420;color:var(--fg);max-width:640px}
+/* Sequence */
+#seqBoard{ display:grid; grid-template-columns: repeat(2,120px); grid-template-rows: repeat(2,120px); gap:12px; justify-content:center; margin: 12px 0; }
+.q{ width:120px; height:120px; border-radius:12px; border:2px solid #2b2f3a; user-select:none; touch-action:manipulation; position:relative; }
+.q span{ position:absolute; inset:0; display:grid; place-items:center; font-size:42px; font-weight:800; color:rgba(0,0,0,.35); }
+.q1{ background:#d33; } .q2{ background:#3d3; } .q3{ background:#36f; } .q4{ background:#dd3; }
+.q.active{ filter:brightness(2); }
+.q.disabled{ opacity:.45; border-style:dashed; pointer-events:none }
+#seqBoard.symbols .q1{ background:#4a4a4a; }
+#seqBoard.symbols .q2{ background:#595959; }
+#seqBoard.symbols .q3{ background:#686868; }
+#seqBoard.symbols .q4{ background:#777777; }
+#seqBoard.symbols .q span{ color:#eaeaf0; font-size:48px; }
+/* Reflex */
+#reflexArea{position:relative;width:min(520px,95vw);height:220px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;display:grid;place-items:center;font-size:26px;font-weight:700;user-select:none;touch-action:manipulation}
+#reflexArea.ready{background:#202432}
+#reflexArea.go{background:#1f3d1f}
+#reflexArea.early{background:#3d1f1f}
+#reflexHUD{display:flex;justify-content:space-between;align-items:center;width:min(520px,95vw);margin:0 auto}
+/* Catch! */
+#catchArea{position:relative;width:min(520px,95vw);height:260px;margin:12px auto;border:1px dashed #2b2f3a;border-radius:10px;background:#0f1320;overflow:hidden;touch-action:manipulation}
+#target{position:absolute;width:44px;height:44px;border-radius:50%;background:#7cf3a0;box-shadow:0 0 12px rgba(124,243,160,.6);display:grid;place-items:center;font-weight:800;color:#101826;user-select:none}
+#catchHUD{display:flex;justify-content:space-between;align-items:center;width:min(520px,95vw);margin:0 auto}
+</style>
 </head>
 <body>
-  <header>
-    <h1>TamaPWA — PWA</h1>
-    <div class="right">
-      <button id="demo">⏱️ Demo: OFF</button>
-      <button id="installBtn" hidden>Installa</button>
-    </div>
-  </header>
+<header>
+  <h1>TamaPWA — Single-file <span class="badge">v19</span></h1>
+  <div class="right">
+    <button id="feed">🍎 Nutri</button>
+    <button id="catchBtn">🎯 Catch!</button>
+    <button id="reflex">⚡ Reflex</button>
+    <button id="sequence">🟥🟩🟦🟨 Sequence</button>
+    <button id="sleep">😴 Dormi</button>
+    <button id="clean">🧼 Pulisci</button>
+    <button id="sound">🔊 Suoni: ON</button>
+    <button id="demo">⏱️ Demo: OFF</button>
+    <button id="install">⬇️ Installa</button>
+    <button id="resetCache">♻️ Reset cache</button>
+  </div>
+</header>
 
-  <main>
-    <div class="row">
-      <button id="feed" class="primary">🍎 Nutri</button>
-      <button id="play">🎯 Catch!</button>
-      <button id="reflex">⚡ Reflex</button>
-      <button id="sequence">🟥🟩🟦🟨 Sequence</button>
-      <button id="sleep">😴 Dormi</button>
-      <button id="clean">🧽 Pulisci</button>
-      <button id="sound">🔊 Suoni: ON</button>
-      <button id="reset" class="danger">♻️ Reset</button>
-    </div>
+<main>
+  <section id="pet">
+    <img id="petImg" alt="sprite" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='192' height='192'><rect width='100%' height='100%' fill='%23101826'/><rect x='56' y='52' width='80' height='96' rx='8' fill='%237cf3a0'/><circle cx='84' cy='88' r='6'/><circle cx='120' cy='88' r='6'/><rect x='96' y='110' width='28' height='8' fill='%23161b26'/></svg>"/>
+  </section>
+  <p id="meta">Età: <b id="age">0g</b> — Stadio: <b id="stage">Uovo</b> — Umore: <b id="mood">Curioso</b></p>
+  <div id="stats">
+    <div class="card"><div>Fame</div><div class="bar"><i id="bH" style="width:40%"></i></div></div>
+    <div class="card"><div>Felicità</div><div class="bar"><i id="bHa" style="width:50%"></i></div></div>
+    <div class="card"><div>Energia</div><div class="bar"><i id="bE" style="width:60%"></i></div></div>
+    <div class="card"><div>Pulizia</div><div class="bar"><i id="bC" style="width:60%"></i></div></div>
+    <div class="card"><div>Salute</div><div class="bar"><i id="bHe" style="width:80%"></i></div></div>
+  </div>
+</main>
 
-    <div id="pet"><img id="petImg" alt="Sprite" width="192" height="192" /></div>
-    <p id="info" class="muted small">
-      Età: <b id="age">0</b>g — Stadio: <b id="stage">Uovo</b> — Umore: <b id="mood">Curioso</b> — Variante: <b id="variant">—</b>
-    </p>
+<div id="toasts"></div>
 
-    <section id="bars">
-      <div class="stat"><label>Fame</label><div class="bar"><div id="bH"></div></div></div>
-      <div class="stat"><label>Felicità</label><div class="bar"><div id="bHa"></div></div></div>
-      <div class="stat"><label>Energia</label><div class="bar"><div id="bE"></div></div></div>
-      <div class="stat"><label>Pulizia</label><div class="bar"><div id="bC"></div></div></div>
-      <div class="stat"><label>Salute</label><div class="bar"><div id="bHe"></div></div></div>
-    </section>
+<!-- Catch -->
+<dialog id="gCatch">
+  <h3>🎯 Catch!</h3>
+  <p class="muted small">Clicca/tocca il bersaglio che si muove. Hai 20 secondi!</p>
+  <div id="catchArea">
+    <div id="target">+1</div>
+  </div>
+  <div id="catchHUD">
+    <span>Punti: <b id="cPts">0</b></span>
+    <span>Tempo: <b id="cTime">20</b>s</span>
+    <button id="startCatch" class="primary">Start</button>
+  </div>
+  <form method="dialog"><button>Chiudi</button></form>
+</dialog>
 
-    <!-- Catch game -->
-    <dialog id="gCatch">
-      <h3>🎯 Catch! (15s)</h3>
-      <p class="muted small">Tocca la stella; si sposta ogni 600 ms.</p>
-      <div id="area" aria-label="Area di gioco"></div>
-      <div id="hud">
-        <span>Punteggio: <b id="pts">0</b></span>
-        <span>Tempo: <b id="t">15</b>s</span>
-        <button id="startCatch" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
+<!-- Reflex -->
+<dialog id="gReflex">
+  <h3>⚡ Reflex Tap</h3>
+  <p class="muted small">Premi START, aspetta <b>GO!</b> e tocca il pannello il più velocemente possibile (5 round).</p>
+  <div id="reflexArea" aria-label="Reflex area">Pronto…</div>
+  <div id="reflexHUD">
+    <span>Round: <b id="rRound">0</b>/5</span>
+    <span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
+    <button id="startReflex" class="primary">Start</button>
+  </div>
+  <form method="dialog"><button>Chiudi</button></form>
+</dialog>
 
-    
-    <!-- Reflex -->
-    <dialog id="gReflex">
-      <h3>⚡ Reflex Tap</h3>
-      <p class="muted small">Premi START, aspetta <b>GO!</b> e tocca il pannello il più velocemente possibile.</p>
-      <div id="reflexArea" aria-label="Reflex area">Attendi...</div>
-      <div id="reflexHUD">
-        <span>Round: <b id="rRound">0</b>/5</span>
-        <span>Tempo: <b id="rTime">—</b> ms (Best: <b id="rBest">—</b>)</span>
-        <button id="startReflex" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
-    <!-- Sequence (Simon-like) -->
-    <dialog id="gSequence">
-      <h3>🟥🟩🟦🟨 Sequence</h3>
-      <p class="muted small">
-        Guarda la sequenza e ripetila <b>nell’ordine</b>. Puoi passare ai <b>simboli</b> se preferisci.
-      </p>
-      <div id="seqModeWrap" class="muted small" style="display:flex;gap:10px;justify-content:flex-end;">
-        <label><input type="checkbox" id="seqSymbols"> Simboli</label>
-      </div>
-      <div id="seqBoard">
-        <button class="q q1" data-q="1"><span>■</span></button>
-        <button class="q q2" data-q="2"><span>■</span></button>
-        <button class="q q3" data-q="3"><span>■</span></button>
-        <button class="q q4" data-q="4"><span>■</span></button>
-      </div>
-      <div id="seqHUD">
-        <span>Round: <b id="seqRound">0</b></span>
-        <span>Stato: <b id="seqStatus">—</b></span>
-        <button id="startSequence" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
-        
-    
-  </main>
+<!-- Sequence -->
+<dialog id="gSequence">
+  <h3>🟥🟩🟦🟨 Sequence</h3>
+  <p class="muted small">Guarda la sequenza e ripetila <b>nell’ordine</b>. Puoi passare ai <b>simboli</b> se preferisci.</p>
+  <div class="muted small" style="display:flex;gap:10px;justify-content:space-between;align-items:center;">
+    <label><input type="checkbox" id="seqSymbols"> Simboli</label>
+    <label><input type="checkbox" id="seqDebug"> Debug</label>
+  </div>
+  <div id="seqDebugStrip" class="muted small" style="display:none"></div>
+  <div id="seqBoard">
+    <button class="q q1" data-q="1"><span>■</span></button>
+    <button class="q q2" data-q="2"><span>■</span></button>
+    <button class="q q3" data-q="3"><span>■</span></button>
+    <button class="q q4" data-q="4"><span>■</span></button>
+  </div>
+  <div id="seqHUD">
+    <span>Round: <b id="seqRound">0</b></span>
+    <span>Stato: <b id="seqStatus">—</b></span>
+    <button id="startSequence" class="primary">Start</button>
+  </div>
+  <form method="dialog"><button>Chiudi</button></form>
+</dialog>
 
-  <footer>
-    <small>© 2025 TamaPWA — PWA con sprite pixel‑art</small>
-  </footer>
+<script>
+const $=s=>document.querySelector(s);
+const toastWrap=$('#toasts');
+function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; toastWrap.appendChild(el); setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(6px)';},1400); setTimeout(()=>el.remove(),1800); }
 
-  <script src="script.js?v=8"></script>
-  <script>
-    // Optional "Install" button handling
-    const installBtn = document.getElementById('installBtn');
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault(); deferredPrompt = e; if (installBtn) installBtn.hidden = false;
-    });
-    if (installBtn) installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.hidden = true;
-    });
-  </script>
+// State
+const S=JSON.parse(localStorage.getItem('tama')||'{}');
+if(!S.init){ Object.assign(S,{init:true,h:40,ha:50,e:60,c:60,he:80,last:Date.now(),soundOn:true,demo:false,sleep:false,scores:{sequenceBest:0,reflexBest:null,catchBest:0}}); save(); }
+function save(){ localStorage.setItem('tama', JSON.stringify(S)); }
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+
+// Audio
+let ctx;
+function getCtx(){ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); return ctx; }
+function beep(freq=440,dur=120,type='square',vol=0.28){ if(!S.soundOn) return; const c=getCtx(); const o=c.createOscillator(), g=c.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=vol; o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+dur/1000); }
+['pointerdown','touchstart','click','keydown'].forEach(ev=>window.addEventListener(ev,async()=>{ try{ const c=getCtx(); if(c.state==='suspended') await c.resume(); const b=c.createBuffer(1,1,22050); const s=c.createBufferSource(); s.buffer=b; s.connect(c.destination); s.start(0);}catch{} },{once:true,passive:true}));
+
+// Elements
+const petImg=$('#petImg'), ageEl=$('#age'), stageEl=$('#stage'), moodEl=$('#mood');
+const bH=$('#bH'), bHa=$('#bHa'), bE=$('#bE'), bC=$('#bC'), bHe=$('#bHe');
+const feedBtn=$('#feed'), cleanBtn=$('#clean'), sleepBtn=$('#sleep'), soundBtn=$('#sound'), demoBtn=$('#demo'), installBtn=$('#install'), resetCacheBtn=$('#resetCache');
+const catchBtn=$('#catchBtn'), reflexBtn=$('#reflex'), seqBtn=$('#sequence');
+
+// Buttons
+soundBtn.onclick=()=>{ S.soundOn=!S.soundOn; soundBtn.textContent=S.soundOn?'🔊 Suoni: ON':'🔈 Suoni: OFF'; save(); if(S.soundOn){ beep(660,120);} };
+demoBtn.onclick=()=>{ S.demo=!S.demo; demoBtn.textContent=S.demo?'⏱️ Demo: ON':'⏱️ Demo: OFF'; save(); };
+installBtn.onclick=async()=>{ try{ await navigator.serviceWorker.register('service-worker.js'); toast('PWA installata/aggiornata'); }catch{ toast('Impossibile installare SW'); } };
+resetCacheBtn.onclick=async()=>{ try{ if('serviceWorker' in navigator){ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.unregister(); } } if('caches' in window){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } }catch{} localStorage.removeItem('tama'); location.reload(true); };
+
+feedBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.h=clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); beep(520); render(); save(); toast('🍎 Fame +28 / Pulizia -4'); };
+cleanBtn.onclick=()=>{ if(S.sleep){S.sleep=false;} S.c=clamp(S.c+30,0,100); beep(760); render(); save(); toast('🧼 Pulizia +30'); };
+sleepBtn.onclick=()=>{ if(!S.sleep){S.sleep=true; toast('😴 Dorme');} else { S.sleep=false; toast('☀️ Sveglia'); } save(); render(); };
+
+function render(){ bH.style.width=S.h+'%'; bHa.style.width=S.ha+'%'; bE.style.width=S.e+'%'; bC.style.width=S.c+'%'; bHe.style.width=S.he+'%'; sleepBtn.textContent=S.sleep?'☀️ Sveglia':'😴 Dormi'; }
+render();
+
+// Tick
+const DECAY={h:2,ha:1.5,e:2,c:1};
+setInterval(()=>{
+  const now=Date.now(); let dt=(now-S.last)/1000; if(dt<=0){S.last=now;return;}
+  let dh=dt/3600; if(document.hidden) dh*=0.25;
+  if(!S.sleep){ S.h=clamp(S.h-DECAY.h*dh,0,100); S.ha=clamp(S.ha-DECAY.ha*dh,0,100); S.e=clamp(S.e-DECAY.e*dh,0,100); S.c=clamp(S.c-DECAY.c*dh,0,100); }
+  else { S.e=clamp(S.e+5*dh,0,100); if(S.e>=95) S.sleep=false; }
+  S.last=now; save(); render();
+},1000);
+
+// ===== CATCH! =====
+const dlgCatch=$('#gCatch'), startCatch=$('#startCatch'), catchArea=$('#catchArea'), target=$('#target'), cPtsEl=$('#cPts'), cTimeEl=$('#cTime');
+let cPts=0, cTime=20, cTimer=null, vx=2.2, vy=1.8, playing=false;
+catchBtn.onclick=()=>{ dlgCatch.showModal(); resetCatch(); };
+function resetCatch(){ cPts=0; cTime=20; cPtsEl.textContent='0'; cTimeEl.textContent=String(cTime); target.style.left='10px'; target.style.top='10px'; playing=false; vx=2.2; vy=1.8; }
+startCatch.onclick=()=>{ if(playing) return; playing=true; moveLoop(); timeLoop(); };
+function moveLoop(){ if(!playing) return; const maxX=catchArea.clientWidth-target.offsetWidth; const maxY=catchArea.clientHeight-target.offsetHeight; let nx=target.offsetLeft+vx; let ny=target.offsetTop+vy; if(nx<0||nx>maxX){ vx*=-1; nx=Math.max(0,Math.min(maxX,nx)); } if(ny<0||ny>maxY){ vy*=-1; ny=Math.max(0,Math.min(maxY,ny)); } target.style.left=nx+'px'; target.style.top=ny+'px'; requestAnimationFrame(moveLoop); }
+function timeLoop(){ if(!playing) return; cTime--; cTimeEl.textContent=String(cTime); if(cTime<=0){ playing=false; endCatch(); } else { cTimer=setTimeout(timeLoop,1000); } }
+target.addEventListener('pointerdown',(e)=>{ if(!playing) return; e.preventDefault(); cPts++; cPtsEl.textContent=String(cPts); beep(700,80); target.textContent='+'+((cPts%5==0)?2:1); vx+= (vx>0? .22:-.22); vy+= (vy>0? .20:-.20); },{passive:false});
+function endCatch(){ const gain = Math.min(12, 2 + Math.floor(cPts/3)); const cost = 4; const food = Math.min(6, Math.floor(cPts/4)); S.ha = clamp(S.ha + gain, 0, 100); S.e = clamp(S.e - cost, 0, 100); S.h = clamp(S.h + food, 0, 100); const best = (S.scores.catchBest||0); if(cPts > best){ S.scores.catchBest = cPts; toast('🏆 Record Catch: '+cPts); } save(); render(); toast('🎯 Catch: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food : '')); beep(620,120); setTimeout(()=>beep(740,120),140); }
+
+// ===== REFLEX =====
+const dlgReflex=$('#gReflex'), startReflex=$('#startReflex'), reflexArea=$('#reflexArea');
+const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest');
+reflexBtn.onclick=()=>{ dlgReflex.showModal(); reflexArea.className='ready'; reflexArea.textContent='Pronto…'; rRoundEl.textContent='0'; rTimeEl.textContent='—'; rBestEl.textContent=(S.scores.reflexBest==null?'—':S.scores.reflexBest); };
+let rRound=0, rBest=S.scores.reflexBest, rStart=0, rState='idle', rTimeout=null;
+startReflex.onclick=()=> startReflexGame();
+function startReflexGame(){ clearTimeout(rTimeout); rRound=0; rBest=S.scores.reflexBest; nextReflexRound(); }
+function nextReflexRound(){ rRound++; rRoundEl.textContent=String(rRound); if(rRound>5) return endReflexSeries(); rState='waiting'; reflexArea.className='ready'; reflexArea.textContent='Attendi…'; const delay=600+Math.random()*1800; rTimeout=setTimeout(()=>{ rState='go'; reflexArea.className='go'; reflexArea.textContent='GO! TAP!'; rStart=performance.now(); beep(800,90); },delay); }
+reflexArea.addEventListener('pointerdown',(ev)=>{ ev.preventDefault(); if(rState==='waiting'){ reflexArea.className='early'; reflexArea.textContent='Troppo presto!'; beep(200,160); S.ha=clamp(S.ha-1,0,100); save(); render(); clearTimeout(rTimeout); setTimeout(nextReflexRound,700); } else if(rState==='go'){ const t=Math.round(performance.now()-rStart); rState='scored'; rTimeEl.textContent=String(t); rBest=(rBest==null)?t:Math.min(rBest,t); const improved=(S.scores.reflexBest==null)|| (rBest<S.scores.reflexBest); S.scores.reflexBest=rBest; const gain=t<=250?10:t<=350?7:t<=500?5:3; const food=gain>=7?3:gain>=5?2:1; S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-3,0,100); S.h=clamp(S.h+food,0,100); save(); render(); if(improved) toast('🏆 Record Reflex: '+rBest+' ms'); toast('⚡ Reflex: +Fel '+gain+' / -En 3 / +Fame '+food); beep(620,120); setTimeout(()=>beep(740,120),140); setTimeout(nextReflexRound,700); } },{passive:false});
+function endReflexSeries(){ rState='idle'; reflexArea.className='ready'; reflexArea.textContent='Serie finita! Best: '+(rBest==null?'—':rBest+' ms'); }
+
+// ===== SEQUENCE =====
+const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound'), seqBoard=$('#seqBoard'), seqSymbols=$('#seqSymbols'), seqDebug=$('#seqDebug'), seqDebugStrip=$('#seqDebugStrip');
+seqBtn.onclick=()=>{ dlgSeq.showModal(); resetSeqUI(); updateSeqMode(); };
+function updateSeqMode(){ if(!seqBoard) return; if (seqSymbols && seqSymbols.checked){ seqBoard.classList.add('symbols'); const qs=seqBoard.querySelectorAll('.q'); if(qs.length>=4){ qs[0].querySelector('span').textContent='▲'; qs[1].querySelector('span').textContent='◆'; qs[2].querySelector('span').textContent='●'; qs[3].querySelector('span').textContent='■'; } } else { seqBoard.classList.remove('symbols'); seqBoard.querySelectorAll('.q').forEach(q=>q.querySelector('span').textContent='■'); } }
+if (seqSymbols) seqSymbols.addEventListener('change', updateSeqMode);
+let seqState='idle', seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
+function seqLog(){ if(!seqDebug || !seqDebugStrip) return; if(!seqDebug.checked){ seqDebugStrip.style.display='none'; return; } seqDebugStrip.style.display='block'; seqDebugStrip.textContent=`state=${seqState} | round=${seqRound} | idx=${seqIdx}/${seq.length} | seq=[${seq.join(',')}]`; }
+function resetSeqUI(){ clearTimeout(seqTimer); seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqInputOpen=false; if(seqRoundEl) seqRoundEl.textContent='0'; if(seqStatus) seqStatus.textContent='—'; setQDisabled(true); if(startSeq) startSeq.disabled=false; seqLog(); }
+if (startSeq) startSeq.onclick=()=> startSeqGame();
+function startSeqGame(){ resetSeqUI(); if(seqStatus) seqStatus.textContent='Guarda la sequenza'; nextSeqRound(); }
+function nextSeqRound(){ seqRound++; if(seqRoundEl) seqRoundEl.textContent=String(seqRound); seqIdx=0; seq.push(1+Math.random()*4|0); playSeq(); }
+function playSeq(){ seqState='playback'; setQDisabled(true); seqInputOpen=false; seqLog(); if(startSeq) startSeq.disabled=true; let i=0; const step=()=>{ if(i>=seq.length){ seqState='input'; setQDisabled(false); seqIdx=0; seqLog(); if(seqStatus) seqStatus.textContent='Tocca in ordine (1/'+seq.length+')'; setTimeout(()=>{seqInputOpen=true;},80); if(startSeq) startSeq.disabled=false; return; } const val=seq[i], el=seqBoard.querySelector(`.q[data-q="${val}"]`); if(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),220); } beep([440,520,660,780][val-1],160); i++; seqTimer=setTimeout(step,520); }; step(); }
+function setQDisabled(d){ seqBoard.querySelectorAll('.q').forEach(q=>q.classList.toggle('disabled',!!d)); }
+function colorName(v){ return (seqSymbols && seqSymbols.checked)? ({1:'▲',2:'◆',3:'●',4:'■'}[v]):({1:'rosso',2:'verde',3:'blu',4:'giallo'}[v]); }
+seqBoard.addEventListener('pointerup',(ev)=>{ const now=performance.now(); if(now-seqLastTs<120) return; seqLastTs=now; const btn=ev.target.closest('.q'); if(!btn) return; ev.preventDefault(); handleQ(Number(btn.dataset.q)); },{passive:false});
+function handleQ(val){ if(seqState!=='input'||!seqInputOpen){ seqLog(); return; } const expected=seq[seqIdx]; const el=seqBoard.querySelector(`.q[data-q="${val}"]`); if(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),180);} beep([440,520,660,780][val-1],140); if(val===expected){ seqIdx++; seqLog(); if(seqIdx<seq.length){ if(seqStatus) seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')'; } else { const gain=6, cost=3, food=Math.min(5, Math.floor(seq.length/2)); S.ha=clamp(S.ha+gain,0,100); S.e=clamp(S.e-cost,0,100); S.h=clamp(S.h+food,0,100); if(!S.scores) S.scores={sequenceBest:0,reflexBest:null,catchBest:0}; if(seqRound>(S.scores.sequenceBest||0)){ S.scores.sequenceBest=seqRound; toast('🏆 Record Sequence: Round '+seqRound+'!'); } save(); render(); toast('🟥🟩 Sequence: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food : '')); if(seqStatus) seqStatus.textContent='Bravo! Prossimo round...'; seqState='idle'; seqInputOpen=false; setQDisabled(true); setTimeout(nextSeqRound,650);} } else { const prog=seqIdx; const gain=Math.min(4, Math.floor(prog/2)); const food=prog>=2?1:0; if(gain>0) S.ha=clamp(S.ha+gain,0,100); if(food>0) S.h=clamp(S.h+food,0,100); save(); render(); toast('❌ Sequence: atteso '+colorName(expected)+', premuto '+colorName(val)+' — +'+(gain>0?('Fel '+gain):'0')+(food?' / +Fame '+food:'')); if(seqStatus) seqStatus.textContent='Errore! Round '+seqRound+' non completato.'; seqState='idle'; seqInputOpen=false; setQDisabled(true); beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);} }
+</script>
 </body>
 </html>
