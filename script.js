@@ -301,7 +301,33 @@
 
   function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
 
-  function persist(){
+  
+  // Simple on-screen emote above the pet image
+  function emote(kind){
+    const pet = document.getElementById('pet');
+    let symbol = '★';
+    if (kind==='yum') symbol='🍎';
+    else if (kind==='play') symbol='🎮';
+    else if (kind==='sleep') symbol='💤';
+    else if (kind==='clean') symbol='✨';
+
+    const b = document.createElement('div');
+    b.textContent = symbol;
+    b.style.position='absolute';
+    b.style.top='10px';
+    b.style.right='10px';
+    b.style.fontSize='28px';
+    b.style.filter='drop-shadow(0 2px 2px rgba(0,0,0,.6))';
+    b.style.transition='transform .7s ease, opacity .7s ease';
+    b.style.opacity='1';
+    pet.appendChild(b);
+    requestAnimationFrame(()=>{
+      b.style.transform='translateY(-14px)';
+      b.style.opacity='0';
+    });
+    setTimeout(()=> b.remove(), 800);
+  }
+function persist(){
     localStorage.setItem(stateKey, JSON.stringify(S));
     localStorage.setItem(stateKey+'_lastSeen', String(Date.now()));
   }

@@ -45,7 +45,7 @@ main{ width:min(980px, 100%); margin: 0 auto; padding: 12px; flex:1; }
   border:1px solid #364055; border-radius:999px; color:#b8c1ff; background:#141827;
 }
 
-#pet{
+#pet{ position:relative;
   aspect-ratio: 1 / 1; width:min(60vw, 360px); margin: 16px auto;
   display:grid; place-items:center;
   background:
