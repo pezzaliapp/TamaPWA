@@ -176,6 +176,85 @@
     reflexArea.textContent = 'Serie finita! Best: ' + (rBest==null?'—':rBest+' ms');
     alert('Reflex finito! Best: ' + (rBest==null?'—':rBest+' ms'));
   }
+
+  // ===== Sequence (Simon-like) =====
+  const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
+  const seqBtn=$('#sequence'), seqBoard=document.getElementById('seqBoard'); const seqSymbols=$('#seqSymbols');
+  const qs = Array.from(document.querySelectorAll('#seqBoard .q'));
+  seqBtn.onclick=()=>{ dlgSeq.showModal(); };
+
+  let seqState='idle'; // 'idle' | 'playback' | 'input'
+  let seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
+
+  startSeq.onclick=()=> startSeqGame();
+
+  function startSeqGame(){
+    clearTimeout(seqTimer);
+    seq=[]; seqRound=0; seqIdx=0; seqInputOpen=false;
+    seqStatus.textContent='Guarda la sequenza';
+    setQDisabled(true);
+    nextSeqRound();
+  }
+  function nextSeqRound(){
+    seqRound++; seqRoundEl.textContent=String(seqRound);
+    seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
+    playSeq();
+  }
+  function playSeq(){
+    seqState='playback'; setQDisabled(true); seqInputOpen=false;
+    let i=0;
+    const step = () => {
+      if(i>=seq.length){
+        seqState='input'; setQDisabled(false); seqIdx=0; seqStatus.textContent='Tocca in ordine (1/'+seq.length+')';
+        setTimeout(()=>{ seqInputOpen=true; }, 80);
+        return;
+      }
+      const val=seq[i], el=qs[val-1];
+      flashQ(el); playQSound(val, seqSymbols.checked);
+      i++; seqTimer=setTimeout(step, 520);
+    }; step();
+  }
+  function setQDisabled(b){ qs.forEach(q=>q.classList.toggle('disabled', !!b)); }
+  function flashQ(el){
+    el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220);
+  }
+  function playQSound(val, symbols){
+    if(symbols){
+      // per i simboli, facciamo una scala diversa
+      beep([330,440,554,659][val-1], 160);
+    } else {
+      beep([440,520,660,780][val-1], 160);
+    }
+  }
+  qs.forEach(el=>{
+    el.addEventListener('pointerup', (ev)=>{
+      ev.preventDefault();
+      const now=performance.now(); if(now-seqLastTs<120) return; seqLastTs=now;
+      const val=Number(el.dataset.q); handleQ(val);
+    }, {passive:false});
+  });
+  function handleQ(val){
+    if(seqState!=='input' || !seqInputOpen) return;
+    const expected = seq[seqIdx];
+    flashQ(qs[val-1]); playQSound(val, seqSymbols.checked);
+    if(val===expected){
+      seqIdx++;
+      if(seqIdx<seq.length){
+        seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')';
+      } else {
+        S.ha = clamp(S.ha + 6, 0, 100);
+        S.e  = clamp(S.e - 3, 0, 100);
+        save(); render();
+        seqStatus.textContent='Bravo! Prossimo round...';
+        seqState='idle'; seqInputOpen=false; setQDisabled(true);
+        setTimeout(nextSeqRound, 650);
+      }
+    } else {
+      seqStatus.textContent='Errore!';
+      seqState='idle'; seqInputOpen=false; setQDisabled(true);
+      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
+    }
+  }
 // ===== Loop / decay / variant logic =====
   const DECAY = {h:6, ha:4, e:5, c:3};
   const HEALTH_REGEN=2, HEALTH_DECAY=6;

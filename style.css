@@ -57,3 +57,12 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 #reflexArea.go{background:#1f3d1f}
 #reflexArea.early{background:#3d1f1f}
 #reflexHUD{display:flex;justify-content:space-between;align-items:center;width:min(520px,95vw);margin:0 auto}
+
+/* Sequence (Simon-like) */
+#seqBoard{ display:grid; grid-template-columns: repeat(2,120px); grid-template-rows: repeat(2,120px); gap:12px; justify-content:center; margin: 12px 0; }
+.q{ width:120px; height:120px; border-radius:12px; border:2px solid #2b2f3a; user-select:none; touch-action:manipulation; position:relative; }
+.q span{ position:absolute; inset:0; display:grid; place-items:center; font-size:42px; font-weight:800; color:rgba(0,0,0,.35); }
+.q1{ background:#d33; } .q2{ background:#3d3; } .q3{ background:#36f; } .q4{ background:#dd3; }
+.q.active{ filter:brightness(2); }
+.q.disabled{ opacity:.45; border-style:dashed; pointer-events:none }
+#seqHUD{ display:flex; gap:12px; align-items:center; justify-content:space-between; }
