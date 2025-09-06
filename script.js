@@ -181,6 +181,28 @@
   const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
   const seqBtn=$('#sequence'), seqBoard=document.getElementById('seqBoard'); const seqSymbols=$('#seqSymbols');
   const qs = Array.from(document.querySelectorAll('#seqBoard .q'));
+  // Toggle symbols mode
+  function updateSeqMode(){
+    if(!seqBoard) return;
+    if (seqSymbols.checked){
+      seqBoard.classList.add('symbols');
+      // set distinct glyphs
+      qs[0].querySelector('span').textContent='▲';
+      qs[1].querySelector('span').textContent='◆';
+      qs[2].querySelector('span').textContent='●';
+      qs[3].querySelector('span').textContent='■';
+    } else {
+      seqBoard.classList.remove('symbols');
+      // clear or set faint squares
+      qs.forEach(q=>{ q.querySelector('span').textContent='■'; });
+    }
+  }
+  // apply on open and on toggle
+  if (seqSymbols) {
+    seqSymbols.addEventListener('change', updateSeqMode);
+    updateSeqMode();
+  }
+
   seqBtn.onclick=()=>{ dlgSeq.showModal(); };
 
   let seqState='idle'; // 'idle' | 'playback' | 'input'

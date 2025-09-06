@@ -66,3 +66,10 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .q.active{ filter:brightness(2); }
 .q.disabled{ opacity:.45; border-style:dashed; pointer-events:none }
 #seqHUD{ display:flex; gap:12px; align-items:center; justify-content:space-between; }
+
+/* Sequence: symbols mode (neutral backgrounds) */
+#seqBoard.symbols .q1{ background:#4a4a4a; }
+#seqBoard.symbols .q2{ background:#595959; }
+#seqBoard.symbols .q3{ background:#686868; }
+#seqBoard.symbols .q4{ background:#777777; }
+#seqBoard.symbols .q span{ color:#eaeaf0; font-size:48px; }
