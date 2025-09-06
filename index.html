@@ -22,6 +22,7 @@
   <main>
     <div class="row">
       <button id="feed" class="primary">🍎 Nutri</button>
+    <button id="playRandom">🎮 Gioca</button>
       <button id="play">🎯 Catch!</button>
       <button id="reflex">⚡ Reflex</button>
       <button id="sequence">🟥🟩🟦🟨 Sequence</button>
@@ -72,38 +73,21 @@
     </dialog>
     <!-- Sequence (Simon-like) -->
     <dialog id="gSequence">
-      <h3>🟥🟩🟦🟨 Sequence</h3>
-      <p class="muted small">
-        Guarda la sequenza e ripetila <b>nell’ordine</b>. Puoi passare ai <b>simboli</b> se preferisci.
-      </p>
-      <div id="seqModeWrap" class="muted small" style="display:flex;gap:10px;justify-content:space-between;align-items:center;">
-        <label><input type="checkbox" id="seqSymbols"> Simboli</label>
-        <div style="display:flex;gap:10px;align-items:center;">
-        <label>Velocità: 
-          <select id="seqSpeed">
-            <option value="easy" selected>Lenta</option>
-            <option value="normal">Normale</option>
-            <option value="hard">Veloce</option>
-          </select>
-        </label>
-        <label><input type="checkbox" id="seqTeach" checked> Modalità didattica</label>
-        <button id="seqReplay" title="Rivedi sequenza">Rivedi</button>
-      </div>
-      <div id="seqStrip" class="muted small" style="display:flex;gap:6px;justify-content:center;margin-top:6px;"></div>
-      </div>
-      <div id="seqBoard">
-        <button class="q q1" data-q="1"><span>■</span></button>
-        <button class="q q2" data-q="2"><span>■</span></button>
-        <button class="q q3" data-q="3"><span>■</span></button>
-        <button class="q q4" data-q="4"><span>■</span></button>
-      </div>
-      <div id="seqHUD">
-        <span>Round: <b id="seqRound">0</b></span>
-        <span>Stato: <b id="seqStatus">—</b> · <span id="seqHelp" class="muted small"></span></span>
-        <button id="startSequence" class="primary">Start</button>
-      </div>
-      <form method="dialog"><button>Chiudi</button></form>
-    </dialog>
+  <h3>🟥🟩🟦🟨 Sequence</h3>
+  <p class="muted small">Guarda la sequenza e ripetila nell’ordine.</p>
+  <div id="seqBoard">
+    <button class="q q1" data-q="1"><span>■</span></button>
+    <button class="q q2" data-q="2"><span>■</span></button>
+    <button class="q q3" data-q="3"><span>■</span></button>
+    <button class="q q4" data-q="4"><span>■</span></button>
+  </div>
+  <div class="muted small" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+    <span>Round: <b id="seqRound">0</b></span>
+    <span>Stato: <b id="seqStatus">—</b></span>
+    <button id="startSequence" class="primary">Start</button>
+  </div>
+  <form method="dialog"><button>Chiudi</button></form>
+</dialog>
         
     
   </main>
@@ -124,5 +108,35 @@
       if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.hidden = true;
     });
   </script>
+
+<script>
+// Auto SW update + auto-reload without asking
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js').then(reg => {
+    function listen(registration){
+      if(!registration) return;
+      if (registration.waiting) {
+        registration.waiting.postMessage('SKIP_WAITING');
+      }
+      registration.addEventListener('updatefound', () => {
+        const nw = registration.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed') {
+            if (navigator.serviceWorker.controller) {
+              nw.postMessage('SKIP_WAITING');
+            }
+          }
+        });
+      });
+    }
+    listen(reg);
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }).catch(console.warn);
+}
+</script>
+
 </body>
 </html>
