@@ -47,13 +47,31 @@
   const initial=()=>({createdAt:Date.now(),last:Date.now(),age:0,stage:'egg',
     h:80,ha:80,e:80,c:80,he:100,sleep:false, soundOn:true,
     metrics:{feed:0,play:0,clean:0,sleepMin:0,energySpent:0,hours:0,cleanSum:0,happySum:0},
-    variant:null, demo:false
+    variant:null, demo:false, sleepStart:null
   });
   let S=load();
 
   // ===== WebAudio (8-bit beeps) =====
+  // ===== Mobile Audio Unlock =====
+  const audioStateEl = document.getElementById('audioState');
+  async function ensureAudioUnlocked(){
+    try{
+      const c = getCtx();
+      if (c.state === 'suspended') { await c.resume(); }
+      // iOS unlock via silent buffer
+      const buffer = c.createBuffer(1, 1, 22050);
+      const src = c.createBufferSource(); src.buffer = buffer; src.connect(c.destination); src.start(0);
+      if (audioStateEl) audioStateEl.textContent = 'Audio: ok';
+    }catch(e){
+      if (audioStateEl) audioStateEl.textContent = 'Audio: bloccato (tappa un pulsante)';
+    }
+  }
+  ['pointerdown','touchstart','click','keydown'].forEach(ev=>{
+    window.addEventListener(ev, ()=>{ ensureAudioUnlocked(); }, { once:true, passive:true });
+  });
+
   let ctx=null; const getCtx=()=> ctx||(ctx=new (window.AudioContext||window.webkitAudioContext)());
-  function beep(freq=440, dur=120, type='square', vol=0.2){
+  function beep(freq=440, dur=120, type='square', vol=0.28){
     if(!S.soundOn) return; try{
       const c=getCtx(), o=c.createOscillator(), g=c.createGain();
       o.type=type; o.frequency.value=freq; g.gain.value=vol;
@@ -69,17 +87,17 @@
   const demoBtn=$('#demo'), feedBtn=$('#feed'), playBtn=$('#play'), simonBtn=$('#simon'), sleepBtn=$('#sleep'), cleanBtn=$('#clean'), soundBtn=$('#sound'), resetBtn=$('#reset');
 
   demoBtn.onclick=()=>{ S.demo=!S.demo; demoBtn.textContent= S.demo?'⏱️ Demo: ON':'⏱️ Demo: OFF'; save(); };
-  soundBtn.onclick=()=>{ S.soundOn=!S.soundOn; soundBtn.textContent=S.soundOn?'🔊 Suoni: ON':'🔈 Suoni: OFF'; save(); };
+  soundBtn.onclick=()=>{ S.soundOn=!S.soundOn; soundBtn.textContent=S.soundOn?'🔊 Suoni: ON':'🔈 Suoni: OFF'; save(); if(S.soundOn){ ensureAudioUnlocked(); beep(660,120); } };
   resetBtn.onclick=()=>{ if(confirm('Reset?')){ S=initial(); save(); render(true);} };
 
   // Actions
-  feedBtn.onclick = ()=>{ S.h = clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); S.metrics.feed++; beep(520); emote('🍎'); save(); render(); };
-  sleepBtn.onclick= ()=>{ S.sleep=true; beep(220); emote('💤'); save(); render(); };
-  cleanBtn.onclick= ()=>{ S.c=clamp(S.c+30,0,100); S.metrics.clean++; beep(760); emote('✨'); save(); render(); };
+  feedBtn.onclick = ()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; } S.h = clamp(S.h+28,0,100); S.c=clamp(S.c-4,0,100); S.metrics.feed++; beep(520); emote('🍎'); save(); render(); };
+  sleepBtn.onclick=()=>{ if(!S.sleep){ S.sleep=true; S.sleepStart=Date.now(); emote('💤'); } else { S.sleep=false; S.sleepStart=null; emote('☀️'); } save(); render(); };
+  cleanBtn.onclick= ()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; } S.c=clamp(S.c+30,0,100); S.metrics.clean++; beep(760); emote('✨'); save(); render(); };
 
   // ===== Catch game =====
   const dlgCatch = $('#gCatch'), area=$('#area'), startCatch=$('#startCatch'), ptsEl=$('#pts'), tEl=$('#t');
-  playBtn.onclick=()=>{ openCatch(); };
+  playBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } openCatch(); };
   let timer=null, mover=null, pts=0, time=15;
   function openCatch(){ pts=0; time=15; ptsEl.textContent=pts; tEl.textContent=time; area.innerHTML=''; dlgCatch.showModal(); }
   startCatch.onclick=()=> startGame();
@@ -117,7 +135,7 @@
   const dlgReflex=$('#gReflex'), startReflex=$('#startReflex'), reflexArea=$('#reflexArea');
   const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest');
   const reflexBtn=$('#reflex');
-  reflexBtn.onclick=()=>{ dlgReflex.showModal(); };
+  reflexBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgReflex.showModal(); };
 
   let rRound=0, rBest=null, rStart=0, rState='idle', rTimeout=null;
 
@@ -203,7 +221,7 @@
     updateSeqMode();
   }
 
-  seqBtn.onclick=()=>{ dlgSeq.showModal(); };
+  seqBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgSeq.showModal(); };
 
   let seqState='idle'; // 'idle' | 'playback' | 'input'
   let seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
@@ -290,12 +308,20 @@
       S.e = clamp(S.e - DECAY.e*dh, 0, 100);
       S.c = clamp(S.c - DECAY.c*dh, 0, 100);
     }else{
+      // Sleeping: regen energy, slight decay others
+
       S.e = clamp(S.e + 12*dh, 0, 100);
       S.h = clamp(S.h - 2*dh, 0, 100);
       S.ha= clamp(S.ha- 1*dh, 0, 100);
       S.c = clamp(S.c - 1*dh, 0, 100);
       S.metrics.sleepMin += dh*60;
-      if(S.e>=95) S.sleep=false;
+      const hoursPerDay = S.demo ? (1/60) : 24;
+      const maxSleepHours = 6; // auto-wake after 6 in-game hours
+      if (S.e>=95) { S.sleep=false; S.sleepStart=null; }
+      else if (S.sleepStart){
+        const sleptHours = ((Date.now()-S.sleepStart)/3600000) / (1/ hoursPerDay);
+        if (sleptHours >= maxSleepHours){ S.sleep=false; S.sleepStart=null; }
+      }
     }
     S.metrics.hours += dh;
     S.metrics.cleanSum += S.c*dh;
@@ -342,6 +368,8 @@
   // ===== Render =====
   const SPRITE = (variant, mood) => `sprite-${variant}-${mood}.png`;
   function render(first=false){
+    // Update sleep button label
+    try{ const sb=document.getElementById('sleep'); if(sb) sb.textContent = S.sleep ? '☀️ Sveglia' : '😴 Dormi'; }catch{}
     bH.style.width=S.h+'%'; bHa.style.width=S.ha+'%'; bE.style.width=S.e+'%'; bC.style.width=S.c+'%'; bHe.style.width=S.he+'%';
     ageEl.textContent=S.age; stageEl.textContent=({egg:'Uovo',baby:'Baby',teen:'Teen',adult:'Adult'})[S.stage];
     const mood = getMood(); moodEl.textContent=mood.label;
@@ -378,4 +406,5 @@
 
   // first paint
   render(true);
+  ensureAudioUnlocked();
 })();
