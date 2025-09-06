@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>TamaPWA — Stable</title>
+  <title>TamaPWA — Stable (Auto‑Update)</title>
   <meta name="theme-color" content="#222" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" />
@@ -63,22 +63,45 @@
     <dialog id="howto">
       <h2>Info</h2>
       <ul>
-        <li><b>Demo</b>: con il tasto “⏱️ Demo” 1 minuto = 1 giorno → evoluzione rapida.</li>
-        <li><b>Catch!</b>: fai punti cliccando il bersaglio; alla fine felicità +, energia -.</li>
-        <li>I bisogni calano anche quando non usi l’app.</li>
+        <li><b>Demo</b>: “⏱️ Demo” = 1 min = 1 giorno → evoluzione rapida.</li>
+        <li><b>Catch!</b>: clicca la stella che si muove per 15s → ottieni punti.</li>
+        <li>La PWA si <b>aggiorna in automatico</b> con banner “Aggiorna”.</li>
       </ul>
       <form method="dialog"><button>Chiudi</button></form>
     </dialog>
   </main>
 
   <footer>
-    <small>© 2025 TamaPWA — Stable build</small>
+    <small>© 2025 TamaPWA — Stable build (Auto‑Update)</small>
   </footer>
 
   <script src="script.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
+      navigator.serviceWorker.register('service-worker.js').then((reg) => {
+        // Update banner logic
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateToast(reg);
+            }
+          });
+        });
+        // periodic checks
+        setInterval(() => reg.update(), 60*60*1000);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update();
+        });
+      });
+      // reload once the new SW takes control
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
     }
   </script>
 </body>

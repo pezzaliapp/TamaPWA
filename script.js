@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const stateKey = 'tamaPWA_state_stable';
+  const stateKey = 'tamaPWA_state_stable_update';
 
   const initial = () => ({
     createdAt: Date.now(),
@@ -83,6 +83,29 @@
   render(true);
   setInterval(tick, TICK_MS);
 
+  // ===== Update toast helpers =====
+  window.showUpdateToast = function(reg){
+    let bar = document.getElementById('update-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'update-bar';
+      bar.innerHTML = `
+        <div class="update-bar">
+          <span>Nuova versione disponibile</span>
+          <button id="update-reload">Aggiorna</button>
+        </div>
+      `;
+      document.body.appendChild(bar);
+    }
+    const btn = document.getElementById('update-reload');
+    btn.onclick = () => {
+      const waitingSW = reg.waiting || reg.installing || reg.active;
+      if (waitingSW) {
+        waitingSW.postMessage({ type: 'SKIP_WAITING' });
+      }
+    };
+  };
+
   // ===== Core =====
   function tick(){
     const now = Date.now();
@@ -110,7 +133,7 @@
 
     // Età
     const hoursFromBirth = (now - S.createdAt) / 3600000;
-    const hoursPerDay = S.demoMode ? (1/60) : 24; // demo: 1 min = 1 day
+    const hoursPerDay = S.demoMode ? (1/60) : 24; // demo: 1 min = 1 giorno
     const days = Math.floor(hoursFromBirth / hoursPerDay);
     if (days !== S.ageDays) {
       S.ageDays = days;
@@ -155,7 +178,6 @@
   }
   startBtn.addEventListener('click', startGame);
   function startGame(){
-    // clear previous
     clearInterval(gameTimer); clearInterval(moveTimer);
     score=0; timeLeft=15; scoreEl.textContent=score; timeEl.textContent=timeLeft;
     spawnTarget();
@@ -167,7 +189,6 @@
   }
   function endGame(){
     clearInterval(gameTimer); clearInterval(moveTimer);
-    // premio: felicità cresce con il punteggio, energia cala un po'
     const gain = Math.min(5 + score*2, 40);
     const cost = Math.max(2, Math.floor(score/2));
     S.happiness = clamp(S.happiness + gain, 0, 100);
@@ -211,12 +232,10 @@
     ageText.textContent = 'Età: ' + S.ageDays + 'g';
     stageBadge.textContent = stageLabel(S.stage);
 
-    // Sprite (text-based, stable)
     if (!['🍎','🎯','💤','✨'].includes(petSprite.textContent)){
       petSprite.textContent = spriteFor(mood.code, S.stage, S.sleeping);
     }
 
-    // Update demo button label
     demoBtn.textContent = S.demoMode ? '⏱️ Demo: ON' : '⏱️ Demo: OFF';
 
     if (first){
@@ -264,7 +283,6 @@
     } else {
       S.energy = clamp(S.energy + 12 * dh, 0, 100);
     }
-    // Età
     updateStage();
     persist();
   }

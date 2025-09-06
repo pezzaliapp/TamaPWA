@@ -17,7 +17,7 @@ main{width:min(920px,100%);margin:0 auto;padding:12px;flex:1}
 .bar{height:10px;background:var(--barbg);border-radius:999px;overflow:hidden}
 .bar>div{height:100%;width:0%;background:linear-gradient(90deg,#3de0ad,var(--accent))}
 #actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 18px}
-button{padding:10px 14px;border-radius:10px;border:1px solid #2b2f3a;background:#202432;color:var(--ink);cursor:pointer;font-weight:600}
+button{padding:10px 14px;border-radius:10px;border:1px solid #2b2f3a;background:#202432;color:#var(--ink);cursor:pointer;font-weight:600}
 button.primary{outline:2px solid #2d4}
 button.danger{border-color:#5c2430;background:#30171c;color:#ffb3bd}
 dialog{border:none;border-radius:16px;background:#11151f;color:#eaeaf0;padding:18px;width:min(560px,90vw)}
@@ -25,3 +25,17 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 /* Catch game */
 #gameArea{margin:10px 0;width:min(520px,90vw);height:300px;border:1px dashed #2b2f3a;border-radius:10px;position:relative;background:#0f1320;overflow:hidden}
 .target{position:absolute;width:40px;height:40px;border-radius:50%;background:#7cf3a0;display:grid;place-items:center;user-select:none;cursor:pointer;font-weight:bold}
+/* Update toast */
+.update-bar{
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: 16px; z-index: 9999;
+  display: flex; gap: 12px; align-items: center;
+  background: #1a1c22; color: #eaeaf0;
+  border: 1px solid #2b2f3a; border-radius: 12px;
+  padding: 10px 12px; box-shadow: 0 6px 24px rgba(0,0,0,.35);
+}
+.update-bar button{
+  padding: 8px 12px; border-radius: 10px; border: 1px solid #2b2f3a;
+  background: #202432; color: #eaeaf0; cursor: pointer; font-weight: 600;
+}
+.update-bar button:active{ transform: translateY(1px); }
