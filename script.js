@@ -196,85 +196,106 @@
   }
 
   // ===== Sequence (Simon-like) =====
-// v25.2 Sequence — Simon corretto con countdown sonoro e start affidabile
-const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
-const seqBoard=document.getElementById('seqBoard');
-const qs = Array.from(seqBoard ? seqBoard.querySelectorAll('.q') : []);
-let seq=[], seqIdx=0, seqRound=0, state='idle', accepting=false, lastTap=0, countdownId=null;
-
-function flash(el){ if(!el) return; el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
-function toneFor(v){ beep([440,520,660,780][v-1], 120); }
-
-function playback(){
-  state='playback'; accepting=false; let i=0;
-  const STEP=520, GAP=230;
-  seqStatus && (seqStatus.textContent='Guarda la sequenza');
-  function step(){
-    if(i>=seq.length){ state='input'; accepting=true; seqIdx=0; seqStatus && (seqStatus.textContent='Ripeti ('+seq.length+')'); return; }
-    const v=seq[i], el=qs[v-1]; if(el){ el.classList.add('active'); tick(); toneFor(v); }
-    setTimeout(()=>{ if(el) el.classList.remove('active'); i++; setTimeout(step, GAP); }, STEP);
-  }
-  step();
-}
-
-function nextRound(){
-  seqRound++; if(seqRoundEl) seqRoundEl.textContent=String(seqRound);
-  seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
-  setTimeout(playback, 360);
-}
-
-function startSeqFlow(){
-  // Reset and audible countdown 3..2..1.. GO
-  seq=[]; seqRound=0; seqIdx=0; state='idle'; accepting=false;
-  if(seqStatus) seqStatus.textContent='Pronti…';
-  let n=3;
-  if(countdownId) clearInterval(countdownId);
-  countdownId = setInterval(()=>{
-    if(seqStatus) seqStatus.textContent = 'Partenza: '+n;
-    beep(500 + (3-n)*40, 90, 'square', 0.20);
-    n--;
-    if(n<0){
-      clearInterval(countdownId); countdownId=null;
-      good();
-      nextRound();
+  const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
+  const seqBtn=$('#sequence'), seqBoard=document.getElementById('seqBoard'); const seqSymbols=$('#seqSymbols');
+  const qs = Array.from(document.querySelectorAll('#seqBoard .q'));
+  // Toggle symbols mode
+  function updateSeqMode(){
+    if(!seqBoard) return;
+    if (seqSymbols.checked){
+      seqBoard.classList.add('symbols');
+      // set distinct glyphs
+      qs[0].querySelector('span').textContent='▲';
+      qs[1].querySelector('span').textContent='◆';
+      qs[2].querySelector('span').textContent='●';
+      qs[3].querySelector('span').textContent='■';
+    } else {
+      seqBoard.classList.remove('symbols');
+      // clear or set faint squares
+      qs.forEach(q=>{ q.querySelector('span').textContent='■'; });
     }
-  }, 520);
-}
-
-startSeq && startSeq.addEventListener('click', ()=>{
-  startSeqFlow();
-});
-
-// Quando si apre il dialog, assicuriamoci che l'audio sia sbloccato dal primo gesto
-['click','pointerdown','touchstart','keydown'].forEach(ev=>{
-  dlgSeq && dlgSeq.addEventListener(ev, async ()=>{
-    try{ const ac = (window.__ac || (window.AudioContext||window.webkitAudioContext)? new (window.AudioContext||window.webkitAudioContext)():null); if(ac && ac.state==='suspended') await ac.resume(); }catch{}
-  }, {once:true, passive:true});
-});
-
-qs.forEach(btn=>btn.addEventListener('pointerup',(ev)=>{
-  ev.preventDefault(); const now=performance.now(); if(now-lastTap<120) return; lastTap=now;
-  if(state!=='input'||!accepting) return;
-  const v = Number(btn.dataset.q); flash(btn); toneFor(v);
-  if(v===seq[seqIdx]){
-    seqIdx++;
-    if(seqIdx<seq.length){ if(seqStatus) seqStatus.textContent='Avanti… ('+(seqIdx)+'/'+seq.length+')'; good(); }
-    else { // round superato: premi, poi nuovo round (append)
-      grantRewards({ha:+6, e:-3, h:+Math.min(5, Math.floor(seq.length/2))}, '🟥🟩 Sequence: round '+seqRound+' ✓');
-      if(typeof petReact==='function') petReact('good'); fanfare(); nextRound();
-    }
-  } else {
-    // Errore: ripeti lo stesso round/seq
-    state='fail'; accepting=false; bad();
-    if(seqStatus) seqStatus.textContent='Errore! Riparte il round';
-    setTimeout(playback, 800);
   }
-}, {passive:false}));
+  // apply on open and on toggle
+  if (seqSymbols) {
+    seqSymbols.addEventListener('change', updateSeqMode);
+    updateSeqMode();
+  }
+
+  seqBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgSeq.showModal(); };
+
+  let seqState='idle'; // 'idle' | 'playback' | 'input'
+  let seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
+
+  startSeq.onclick=()=> startSeqGame();
+
+  function startSeqGame(){
+    clearTimeout(seqTimer);
+    seq=[]; seqRound=0; seqIdx=0; seqInputOpen=false;
+    seqStatus.textContent='Guarda la sequenza';
+    setQDisabled(true);
+    nextSeqRound();
+  }
+  function nextSeqRound(){
+    seqRound++; seqRoundEl.textContent=String(seqRound);
+    seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
+    playSeq();
+  }
+  function playSeq(){
+    seqState='playback'; setQDisabled(true); seqInputOpen=false;
+    let i=0;
+    const step = () => {
+      if(i>=seq.length){
+        seqState='input'; setQDisabled(false); seqIdx=0; seqStatus.textContent='Tocca in ordine (1/'+seq.length+')';
+        setTimeout(()=>{ seqInputOpen=true; }, 80);
+        return;
+      }
+      const val=seq[i], el=qs[val-1];
+      flashQ(el); playQSound(val, seqSymbols.checked);
+      i++; seqTimer=setTimeout(step, 520);
+    }; step();
+  }
+  function setQDisabled(b){ qs.forEach(q=>q.classList.toggle('disabled', !!b)); }
+  function flashQ(el){
+    el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220);
+  }
+  function playQSound(val, symbols){
+    if(symbols){
+      // per i simboli, facciamo una scala diversa
+      beep([330,440,554,659][val-1], 160);
+    } else {
+      beep([440,520,660,780][val-1], 160);
+    }
+  }
+  qs.forEach(el=>{
+    el.addEventListener('pointerup', (ev)=>{
+      ev.preventDefault();
+      const now=performance.now(); if(now-seqLastTs<120) return; seqLastTs=now;
+      const val=Number(el.dataset.q); handleQ(val);
+    }, {passive:false});
+  });
+  function handleQ(val){
+    if(seqState!=='input' || !seqInputOpen) return;
+    const expected = seq[seqIdx];
+    flashQ(qs[val-1]); playQSound(val, seqSymbols.checked);
+    if(val===expected){
+      seqIdx++;
+      if(seqIdx<seq.length){
+        seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')';
+      } else {
+        S.ha = clamp(S.ha + 6, 0, 100);
+        S.e  = clamp(S.e - 3, 0, 100);
+        save(); render();
+        seqStatus.textContent='Bravo! Prossimo round...';
+        seqState='idle'; seqInputOpen=false; setQDisabled(true);
+        setTimeout(nextSeqRound, 650);
+      }
+    } else {
+      seqStatus.textContent='Errore!';
+      seqState='idle'; seqInputOpen=false; setQDisabled(true);
+      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
+    }
+  }
 // ===== Loop / decay / variant logic =====
-
-
-
-
   const DECAY = {h:6, ha:4, e:5, c:3};
   const HEALTH_REGEN=2, HEALTH_DECAY=6;
   setInterval(tick, 500);
@@ -387,48 +408,3 @@ qs.forEach(btn=>btn.addEventListener('pointerup',(ev)=>{
   render(true);
   ensureAudioUnlocked();
 })();
-function good(){ beep(784,90); setTimeout(()=>beep(988,90),95); }
-
-function bad(){ beep(220,140); setTimeout(()=>beep(180,180),120); }
-
-function fanfare(){ beep(659,120); setTimeout(()=>beep(880,140),140); setTimeout(()=>beep(1175,160),320); }
-
-function grantRewards(delta, label){
-  // delta: {ha: +/-, e: +/-, h: +/-, c: +/-}
-  if(delta.ha) { S.ha = clamp(S.ha + delta.ha, 0, 100); if (typeof chipHa!=='undefined' && chipHa) chipHa.textContent = (delta.ha>0?'🙂 +':'🙂 ') + delta.ha; if (typeof chipHa!=='undefined' && chipHa) chipHa.classList.add('show'); setTimeout(()=>chipHa && chipHa.classList.remove('show'), 900); }
-  if(delta.e)  { S.e  = clamp(S.e  + delta.e , 0, 100); if (typeof chipE!=='undefined'  && chipE)  chipE.textContent  = (delta.e>0?'⚡ +':'⚡ ')   + delta.e;  if (typeof chipE!=='undefined'  && chipE)  chipE.classList.add('show');  setTimeout(()=>chipE && chipE.classList.remove('show'), 900); }
-  if(delta.h)  { S.h  = clamp(S.h  + delta.h , 0, 100); if (typeof chipH!=='undefined'  && chipH)  chipH.textContent  = (delta.h>0?'🍎 +':'🍎 ')   + delta.h;  if (typeof chipH!=='undefined'  && chipH)  chipH.classList.add('show');  setTimeout(()=>chipH && chipH.classList.remove('show'), 900); }
-  if(delta.c)  { S.c  = clamp(S.c  + delta.c , 0, 100); if (typeof chipC!=='undefined'  && chipC)  chipC.textContent  = (delta.c>0?'🧼 +':'🧼 ')   + delta.c;  if (typeof chipC!=='undefined'  && chipC)  chipC.classList.add('show');  setTimeout(()=>chipC && chipC.classList.remove('show'), 900); }
-  if (typeof render==='function') render();
-  if (typeof save==='function') save();
-  if (typeof toast==='function' && label) toast(label);
-}
-
-function petReact(type){ // 'good' | 'bad' | 'sleep'
-  try{
-    const face = document.getElementById('face');
-    if(!face) return;
-    const prev = face.textContent;
-    if(type==='good'){ face.textContent='🙂'; good(); setTimeout(()=>{ face.textContent=prev; }, 900); }
-    else if(type==='bad'){ face.textContent='😢'; bad(); setTimeout(()=>{ face.textContent=prev; }, 900); }
-    else if(type==='sleep'){ face.textContent='😴'; }
-  }catch{}
-}
-
-(function(){
-  const btn = document.getElementById('playRandom');
-  if(!btn) return;
-  btn.addEventListener('click', ()=>{
-    const dialogs = ['gCatch','gReflex','gSequence'].filter(id=>document.getElementById(id));
-    const pick = dialogs.length ? dialogs[Math.floor(Math.random()*dialogs.length)] : 'gSequence';
-    const dlg = document.getElementById(pick);
-    if(dlg && dlg.showModal) dlg.showModal();
-    if(pick==='gCatch'){ const s=document.getElementById('startCatch'); s && s.click(); }
-    if(pick==='gReflex'){ const s=document.getElementById('startReflex'); s && s.click(); }
-    if(pick==='gSequence'){ const s=document.getElementById('startSequence'); s && s.click(); }
-  });
-})();
-
-function toast(msg){
-  console.log('[toast]', msg);
-}
