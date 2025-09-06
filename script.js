@@ -110,55 +110,94 @@
     save(); render(); beep(620,140); setTimeout(()=>beep(740,140),160); alert('Fine! Punteggio: '+pts+' — Felicità +'+gain+', Energia -'+cost);
   }
 
-  // ===== Simon game =====
+  
+  // ===== Simon game (robust state machine) =====
   const dlgSimon=$('#gSimon'), startSimon=$('#startSimon'), statusEl=$('#status'), roundEl=$('#round');
   const pads=Array.from(document.querySelectorAll('.pad'));
+  simonBtn.onclick=()=>{ dlgSimon.showModal(); };
+
+  let simState = 'idle'; // 'idle' | 'playback' | 'input'
+  let sequence=[], idx=0, round=0;
+  let playbackTimer=null;
+
+  startSimon.onclick=()=> startSimonGame();
+
+  function startSimonGame(){
+    clearTimeout(playbackTimer);
+    sequence=[]; round=0; idx=0;
+    statusEl.textContent='Guarda la sequenza';
+    setPadsDisabled(true);
+    nextRound();
+  }
+
+  function nextRound(){
+    round++; roundEl.textContent=String(round);
+    idx=0; sequence.push(1 + Math.floor(Math.random()*4));
+    playSequence();
+  }
+
+  function playSequence(){
+    simState='playback';
+    setPadsDisabled(true);
+    // play steps one by one
+    let i=0;
+    const step = () => {
+      if (i >= sequence.length){
+        simState='input';
+        setPadsDisabled(false);
+        idx = 0;
+        statusEl.textContent = 'Tocca i pad in ordine (1/' + sequence.length + ')';
+        return;
+      }
+      const val = sequence[i];
+      const el = pads[val-1];
+      flashPad(el);
+      beep([440,520,660,780][val-1], 180);
+      i++;
+      playbackTimer = setTimeout(step, 520);
+    };
+    step();
+  }
+
   function setPadsDisabled(disabled){
     pads.forEach(p=>{ p.classList.toggle('disabled', !!disabled); });
   }
 
-  simonBtn.onclick=()=>{ dlgSimon.showModal(); };
-  let sequence=[], userIdx=0, playing=false, round=0;
-  startSimon.onclick=()=> startSimonGame();
-  function startSimonGame(){ setPadsDisabled(true);
-    sequence=[]; round=0; statusEl.textContent='Guarda la sequenza'; nextRound();
-  }
-  function nextRound(){ setPadsDisabled(true);
-    round++; roundEl.textContent=String(round); userIdx=0; sequence.push(1+Math.floor(Math.random()*4));
-    playSequence(0);
-  }
-  function playSequence(i){ setPadsDisabled(true); statusEl.textContent='Guarda la sequenza';
-    playing=true; if(i>=sequence.length){ playing=false; setPadsDisabled(false); userIdx=0; statusEl.textContent='Tocca i pad in ordine (1/'+sequence.length+')'; return; }
-    const padVal=sequence[i]; const el=pads[padVal-1];
-    flashPad(el); beep([440,520,660,780][padVal-1], 180);
-    setTimeout(()=>playSequence(i+1), 520);
-  }
-  function flashPad(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
   pads.forEach(el=>{
-    el.addEventListener('pointerdown', ev=>{ ev.preventDefault(); padPress(Number(el.dataset.pad)); });
-    el.addEventListener('click', ev=>{ ev.preventDefault(); padPress(Number(el.dataset.pad)); });
+    el.addEventListener('pointerdown', ev=>{
+      ev.preventDefault();
+      const val = Number(el.dataset.pad);
+      handlePad(val);
+    });
   });
-  function padPress(val){
-    if(playing) return;
-    const expected = sequence[userIdx];
-    flashPad(pads[val-1]); beep([440,520,660,780][val-1], 120);
-    if(val===expected){
-      userIdx++;
-      if(userIdx<sequence.length){ statusEl.textContent='Tocca i pad in ordine ('+ (userIdx+1) +'/'+sequence.length+')'; }
-      if(userIdx===sequence.length){
+
+  function handlePad(val){
+    if (simState !== 'input') return; // ignore during playback
+    const expected = sequence[idx];
+    flashPad(pads[val-1]); beep([440,520,660,780][val-1], 90);
+    if (val === expected){
+      idx++;
+      if (idx < sequence.length){
+        statusEl.textContent = 'Tocca i pad in ordine ('+(idx+1)+'/'+sequence.length+')';
+      } else {
+        // completed round
         S.ha = clamp(S.ha + 6, 0, 100);
         S.e  = clamp(S.e - 3, 0, 100);
         save(); render();
         statusEl.textContent='Bravo! Prossimo round...';
-        setTimeout(nextRound, 600);
+        simState='idle';
+        setPadsDisabled(true);
+        setTimeout(nextRound, 650);
       }
-    }else{
+    } else {
+      // error
       statusEl.textContent='Errore! Fine partita.';
+      simState='idle';
+      setPadsDisabled(true);
       beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
     }
   }
-
-  // ===== Loop / decay / variant logic =====
+// ===== Loop / decay / variant logic =====
   const DECAY = {h:6, ha:4, e:5, c:3};
   const HEALTH_REGEN=2, HEALTH_DECAY=6;
   setInterval(tick, 500);
