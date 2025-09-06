@@ -8,13 +8,14 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=9" />
 </head>
 <body>
   <header>
     <h1>TamaPWA — PWA</h1>
     <div class="right">
       <button id="demo">⏱️ Demo: OFF</button>
+      <span id="demoBadge" class="muted small" style="display:none;">(DEMO attiva: 1m = 1g)</span>
       <button id="installBtn" hidden>Installa</button>
     </div>
   </header>
@@ -95,12 +96,13 @@
         
     
   </main>
+  <div id="toasts" style="position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9999"></div>
 
   <footer>
     <small>© 2025 TamaPWA — PWA con sprite pixel‑art</small>
   </footer>
 
-  <script src="script.js?v=8"></script>
+  <script src="script.js?v=9"></script>
   <script>
     // Optional "Install" button handling
     const installBtn = document.getElementById('installBtn');
