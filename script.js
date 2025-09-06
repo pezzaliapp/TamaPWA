@@ -415,11 +415,28 @@
   }
 
   function grantRewards(delta, label){
-    if (typeof delta.ha==='number') S.ha = clamp(S.ha + delta.ha, 0, 100);
-    if (typeof delta.e ==='number') S.e  = clamp(S.e  + delta.e , 0, 100);
-    if (typeof delta.h ==='number') S.h  = clamp(S.h  + delta.h , 0, 100);
-    if (typeof delta.c ==='number') S.c  = clamp(S.c  + delta.c , 0, 100);
-    save(); render();
-    if (label) toast(label);
-    try{ if(delta.ha && delta.ha>0) emote('🙂'); else if(delta.ha && delta.ha<0) emote('🙁'); }catch{}
+  if (typeof delta.ha==='number') { S.ha = clamp(S.ha + delta.ha, 0, 100); showChip('chipHa', (delta.ha>0?'🙂 +':'🙂 ')+delta.ha); }
+  if (typeof delta.e ==='number') { S.e  = clamp(S.e  + delta.e , 0, 100); showChip('chipE',  (delta.e>0?'⚡ +':'⚡ ')+delta.e); }
+  if (typeof delta.h ==='number') { S.h  = clamp(S.h  + delta.h , 0, 100); showChip('chipH',  (delta.h>0?'🍎 +':'🍎 ')+delta.h); }
+  if (typeof delta.c ==='number') { S.c  = clamp(S.c  + delta.c , 0, 100); showChip('chipC',  (delta.c>0?'🧼 +':'🧼 ')+delta.c); }
+  save(); render(); if(label){ toast(label); addLog(label); }
+}catch{}
   }
+
+function showChip(id, text){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = text;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 1200);
+}
+
+function addLog(msg){
+  const wrap = document.getElementById('log');
+  if(!wrap) return;
+  const div = document.createElement('span');
+  div.className='entry';
+  const t = new Date(); const hh = t.getHours().toString().padStart(2,'0'); const mm = t.getMinutes().toString().padStart(2,'0');
+  div.textContent = `[${hh}:${mm}] ` + msg;
+  wrap.prepend(div); while(wrap.children.length>6) wrap.lastChild.remove();
+}
