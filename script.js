@@ -113,21 +113,25 @@
   // ===== Simon game =====
   const dlgSimon=$('#gSimon'), startSimon=$('#startSimon'), statusEl=$('#status'), roundEl=$('#round');
   const pads=Array.from(document.querySelectorAll('.pad'));
+  function setPadsDisabled(disabled){
+    pads.forEach(p=>{ p.classList.toggle('disabled', !!disabled); });
+  }
+
   simonBtn.onclick=()=>{ dlgSimon.showModal(); };
   let sequence=[], userIdx=0, playing=false, round=0;
   startSimon.onclick=()=> startSimonGame();
-  function startSimonGame(){
+  function startSimonGame(){ setPadsDisabled(true);
     sequence=[]; round=0; statusEl.textContent='Guarda la sequenza'; nextRound();
   }
-  function nextRound(){
+  function nextRound(){ setPadsDisabled(true);
     round++; roundEl.textContent=String(round); userIdx=0; sequence.push(1+Math.floor(Math.random()*4));
     playSequence(0);
   }
-  function playSequence(i){
-    playing=true; if(i>=sequence.length){ playing=false; statusEl.textContent='Tocca i pad in ordine'; return; }
+  function playSequence(i){ setPadsDisabled(true); statusEl.textContent='Guarda la sequenza';
+    playing=true; if(i>=sequence.length){ playing=false; setPadsDisabled(false); userIdx=0; statusEl.textContent='Tocca i pad in ordine (1/'+sequence.length+')'; return; }
     const padVal=sequence[i]; const el=pads[padVal-1];
     flashPad(el); beep([440,520,660,780][padVal-1], 180);
-    setTimeout(()=>playSequence(i+1), 360);
+    setTimeout(()=>playSequence(i+1), 520);
   }
   function flashPad(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
   pads.forEach(el=>{
@@ -140,6 +144,7 @@
     flashPad(pads[val-1]); beep([440,520,660,780][val-1], 120);
     if(val===expected){
       userIdx++;
+      if(userIdx<sequence.length){ statusEl.textContent='Tocca i pad in ordine ('+ (userIdx+1) +'/'+sequence.length+')'; }
       if(userIdx===sequence.length){
         S.ha = clamp(S.ha + 6, 0, 100);
         S.e  = clamp(S.e - 3, 0, 100);
