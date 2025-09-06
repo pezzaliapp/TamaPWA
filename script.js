@@ -196,64 +196,56 @@
   }
 
   // ===== Sequence (Simon-like) =====
-// v25 minimal Sequence
+// v25.1 Sequence — logica Simon corretta (append + repeat same on error)
 const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
-const seqBtn=$('#sequence'), seqBoard=document.getElementById('seqBoard');
+const seqBoard=document.getElementById('seqBoard');
 const qs = Array.from(seqBoard ? seqBoard.querySelectorAll('.q') : []);
-let seqState='idle', seq=[], seqIdx=0, seqRound=0, accepting=false, lastTap=0;
+let seq=[], seqIdx=0, seqRound=0, state='idle', accepting=false, lastTap=0;
 
-function seqFlash(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
-function playTone(val){ beep([440,520,660,780][val-1], 120); }
+function flash(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
+function toneFor(v){ beep([440,520,660,780][v-1], 120); }
 
-function seqPlayback(){
-  seqState='playback'; accepting=false; let i=0;
+function playback(){
+  state='playback'; accepting=false; let i=0;
   const STEP=520, GAP=230;
+  seqStatus.textContent='Guarda la sequenza';
   function step(){
-    if(i>=seq.length){ seqState='input'; accepting=true; seqIdx=0; seqStatus.textContent='Ripeti nell’ordine ('+seq.length+')'; return; }
-    const v=seq[i], el=qs[v-1]; el&&el.classList.add('active'); tick();
-    setTimeout(()=>{ el&&el.classList.remove('active'); i++; setTimeout(step, GAP); }, STEP);
+    if(i>=seq.length){ state='input'; accepting=true; seqIdx=0; seqStatus.textContent='Ripeti ('+seq.length+')'; return; }
+    const v=seq[i], el=qs[v-1]; if(el){ el.classList.add('active'); tick(); toneFor(v); }
+    setTimeout(()=>{ if(el) el.classList.remove('active'); i++; setTimeout(step, GAP); }, STEP);
   }
   step();
 }
-
 function nextRound(){
-  seqRound++; seqRoundEl && (seqRoundEl.textContent=String(seqRound));
+  seqRound++; if(seqRoundEl) seqRoundEl.textContent=String(seqRound);
   seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
-  seqStatus.textContent='Guarda la sequenza';
-  setTimeout(seqPlayback, 360);
+  setTimeout(playback, 360);
 }
-
 startSeq && startSeq.addEventListener('click', ()=>{
-  seq=[]; seqRound=0; seqIdx=0; seqStatus.textContent='Pronti…';
-  setTimeout(()=>{ nextRound(); }, 500);
+  seq=[]; seqRound=0; seqIdx=0; state='idle'; accepting=false;
+  seqStatus.textContent='Pronti…';
+  setTimeout(()=>nextRound(), 500);
 });
-
 qs.forEach(btn=>btn.addEventListener('pointerup',(ev)=>{
-  ev.preventDefault();
-  const now = performance.now(); if(now-lastTap<120) return; lastTap=now;
-  if(seqState!=='input' || !accepting) return;
-  const val = Number(btn.dataset.q); seqFlash(btn); playTone(val);
-  if(val === seq[seqIdx]){
+  ev.preventDefault(); const now=performance.now(); if(now-lastTap<120) return; lastTap=now;
+  if(state!=='input'||!accepting) return;
+  const v = Number(btn.dataset.q); flash(btn); toneFor(v);
+  if(v===seq[seqIdx]){
     seqIdx++;
-    if(seqIdx>=seq.length){
-      // Round OK: give uniform rewards
-      grantRewards({ha:+6, e:-3, h:+Math.min(5, Math.floor(seq.length/2))}, '🟥🟩 Sequence: +Fel 6 / -En 3 / +Fame '+Math.min(5, Math.floor(seq.length/2)));
-      petReact('good'); fanfare();
-      nextRound();
-    } else {
-      seqStatus.textContent='Avanti… ('+(seqIdx+1)+'/'+seq.length+')';
-      good();
+    if(seqIdx<seq.length){ seqStatus.textContent='Avanti… ('+(seqIdx)+'/'+seq.length+')'; good(); }
+    else { // round superato: premi, poi nuovo round (append)
+      grantRewards({ha:+6, e:-3, h:+Math.min(5, Math.floor(seq.length/2))}, '🟥🟩 Sequence: round '+seqRound+' ✓');
+      petReact('good'); fanfare(); nextRound();
     }
   } else {
-    // Error: consolation reward and repeat same round with new last element
-    grantRewards({ha:+2, e:-2, h:+1}, '❌ Sequence: premio consolazione +Fel 2 / -En 2 / +Fame 1');
-    petReact('bad');
-    seqIdx=0; seq[seq.length-1]=1+Math.floor(Math.random()*4);
-    seqStatus.textContent='Riprova…';
-    setTimeout(seqPlayback, 560);
+    // Errore: NESSUN cambio sequenza. Ripeti lo STESSO round/seq.
+    state='fail'; accepting=false; bad();
+    seqStatus.textContent='Errore! Riparte il round';
+    setTimeout(playback, 800);
   }
 }, {passive:false}));
 // ===== Loop / decay / variant logic =====
+
 
 
   const DECAY = {h:6, ha:4, e:5, c:3};
