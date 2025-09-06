@@ -47,7 +47,7 @@
   const initial=()=>({createdAt:Date.now(),last:Date.now(),age:0,stage:'egg',
     h:80,ha:80,e:80,c:80,he:100,sleep:false, soundOn:true,
     metrics:{feed:0,play:0,clean:0,sleepMin:0,energySpent:0,hours:0,cleanSum:0,happySum:0},
-    variant:null, demo:false, sleepStart:null, scores:{sequenceBest:0, reflexBest:null, catchBest:0}
+    variant:null, demo:false, sleepStart:null
   });
   let S=load();
 
@@ -125,249 +125,175 @@
     S.ha = clamp(S.ha + gain, 0, 100);
     S.e  = clamp(S.e - cost, 0, 100);
     S.metrics.play++; S.metrics.energySpent += cost;
-    save(); render(); beep(620,140); setTimeout(()=>beep(740,140),160); if (!S.scores) S.scores = {sequenceBest:0, reflexBest:null, catchBest:0};
-    if (pts > (S.scores.catchBest||0)) { S.scores.catchBest = pts; toast('🏆 Record Catch: '+pts); }
-    
+    save(); render(); beep(620,140); setTimeout(()=>beep(740,140),160); alert('Fine! Punteggio: '+pts+' — Felicità +'+gain+', Energia -'+cost);
   }
 
   
   
   
-  // ===== Sequence (Simon-like) — v13 =====
-  const seqBtn=document.getElementById('sequence');
-  const dlgSeq=document.getElementById('gSequence');
-  const startSeq=document.getElementById('startSequence');
-  const seqStatus=document.getElementById('seqStatus');
-  const seqRoundEl=document.getElementById('seqRound');
-  const seqBoard=document.getElementById('seqBoard');
-  const seqSymbols=document.getElementById('seqSymbols');
-  const seqDebug=document.getElementById('seqDebug');
-  const seqDebugStrip=document.getElementById('seqDebugStrip');
+  // ===== Reflex Tap game =====
+  const dlgReflex=$('#gReflex'), startReflex=$('#startReflex'), reflexArea=$('#reflexArea');
+  const rRoundEl=$('#rRound'), rTimeEl=$('#rTime'), rBestEl=$('#rBest');
+  const reflexBtn=$('#reflex');
+  reflexBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgReflex.showModal(); };
 
-  function seqLog(){
-    if(!seqDebug || !seqDebugStrip) return;
-    if(!seqDebug.checked){ seqDebugStrip.style.display='none'; return; }
-    seqDebugStrip.style.display='block';
-    seqDebugStrip.textContent = `state=${seqState} | round=${seqRound} | idx=${seqIdx}/${seq.length} | seq=[${seq.join(',')}]`;
-  }
+  let rRound=0, rBest=null, rStart=0, rState='idle', rTimeout=null;
 
-  if (seqBtn && dlgSeq){
-    seqBtn.addEventListener('click', ()=>{ dlgSeq.showModal(); resetSeqUI(); updateSeqMode(); });
-  }
-
-  function updateSeqMode(){
-    if(!seqBoard) return;
-    if (seqSymbols && seqSymbols.checked){
-      seqBoard.classList.add('symbols');
-      const qs = seqBoard.querySelectorAll('.q');
-      if (qs.length>=4){
-        qs[0].querySelector('span').textContent='▲';
-        qs[1].querySelector('span').textContent='◆';
-        qs[2].querySelector('span').textContent='●';
-        qs[3].querySelector('span').textContent='■';
-      }
-    } else {
-      seqBoard.classList.remove('symbols');
-      seqBoard.querySelectorAll('.q').forEach(q=> q.querySelector('span').textContent='■');
-    }
-  }
-  if (seqSymbols){ seqSymbols.addEventListener('change', updateSeqMode); }
-
-  let seqState='idle', seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
-
-  function resetSeqUI(){
-    clearTimeout(seqTimer);
-    seq=[]; seqIdx=0; seqRound=0; seqState='idle'; seqInputOpen=false;
-    if (seqRoundEl) seqRoundEl.textContent='0';
-    if (seqStatus) seqStatus.textContent='—';
-    setQDisabled(true);
-    if (startSeq) startSeq.disabled=false;
-    seqLog();
-  }
-
-  if (startSeq){
-    startSeq.addEventListener('click', ()=> startSeqGame());
-  }
-
-  function startSeqGame(){
-    resetSeqUI();
-    if (seqStatus) seqStatus.textContent='Guarda la sequenza';
-    nextSeqRound(); // will show 1
-  }
-
-  function nextSeqRound(){
-    seqRound++; if (seqRoundEl) seqRoundEl.textContent=String(seqRound);
-    seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
-    playSeq();
-  }
-
-  function playSeq(){
-    seqState='playback'; setQDisabled(true); seqInputOpen=false; seqLog();
-    if (startSeq) startSeq.disabled=true;
-    let i=0;
-    const step = () => {
-      if(i>=seq.length){
-        seqState='input'; setQDisabled(false); seqIdx=0; seqLog();
-        if (seqStatus) seqStatus.textContent='Tocca in ordine (1/'+seq.length+')';
-        setTimeout(()=>{ seqInputOpen=true; }, 80);
-        if (startSeq) startSeq.disabled=false;
-        return;
-      }
-      const val=seq[i], el=seqBoard.querySelector(`.q[data-q="${val}"]`);
-      if (el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220); }
-      if (seqSymbols && seqSymbols.checked){
-        beep([330,440,554,659][val-1], 160);
-      } else {
-        beep([440,520,660,780][val-1], 160);
-      }
-      i++; seqTimer=setTimeout(step, 520);
-    }; step();
-  }
-
-  function setQDisabled(disabled){
-    if(!seqBoard) return;
-    seqBoard.querySelectorAll('.q').forEach(q=> q.classList.toggle('disabled', !!disabled));
-  }
-
-  function colorName(v){
-    if (seqSymbols && seqSymbols.checked){
-      return {1:'▲',2:'◆',3:'●',4:'■'}[v] || String(v);
-    }
-    return {1:'rosso',2:'verde',3:'blu',4:'giallo'}[v] || String(v);
-  }
-
-  // Delegation for robustness
-  if (seqBoard){
-    seqBoard.addEventListener('pointerup', (ev)=>{
-      const now=performance.now(); if(now-seqLastTs<120) return; seqLastTs=now;
-      const btn = ev.target.closest('.q'); if(!btn) return;
-      ev.preventDefault();
-      const val = Number(btn.dataset.q);
-      handleQ(val);
-    }, {passive:false});
-  }
-
-  function handleQ(val){
-    if(seqState!=='input' || !seqInputOpen){ seqLog(); return; }
-    const expected = seq[seqIdx];
-    const el = seqBoard.querySelector(`.q[data-q="${val}"]`);
-    if (el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 180); }
-    if (seqSymbols && seqSymbols.checked){
-      beep([330,440,554,659][val-1], 140);
-    } else {
-      beep([440,520,660,780][val-1], 140);
-    }
-    if(val===expected){
-      seqIdx++; seqLog();
-      if(seqIdx<seq.length){
-        if (seqStatus) seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')';
-      } else {
-        // SUCCESS: award for completing this round
-        const gain = 6; const cost = 3; const food = Math.min(5, Math.floor(seq.length/2));
-        S.ha = clamp(S.ha + gain, 0, 100);
-        S.e  = clamp(S.e - cost, 0, 100);
-        S.h  = clamp(S.h + food, 0, 100);
-        // Best tracking
-        if (!S.scores) S.scores = {sequenceBest:0, reflexBest:null, catchBest:0};
-        if (seqRound > (S.scores.sequenceBest||0)) {
-          S.scores.sequenceBest = seqRound;
-          toast('🏆 Record Sequence: Round '+seqRound+'!');
-        }
-        save(); render();
-        toast('🟥🟩 Sequence: +Fel '+gain+' / -En '+cost + (food? ' / +Fame '+food : ''));
-        if (seqStatus) seqStatus.textContent='Bravo! Prossimo round...';
-        seqState='idle'; seqInputOpen=false; setQDisabled(true);
-        setTimeout(nextSeqRound, 650);
-      }
-    } else {
-      // FAILURE: partial reward based on progress
-      const prog = seqIdx; // correct taps this round
-      const gain = Math.min(4, Math.floor(prog/2));
-      const food = prog>=2 ? 1 : 0;
-      if (gain>0) S.ha = clamp(S.ha + gain, 0, 100);
-      if (food>0) S.h  = clamp(S.h  + food, 0, 100);
-      save(); render();
-      toast('❌ Sequence: atteso '+colorName(expected)+', hai premuto '+colorName(val)+' — +' + (gain>0? ('Fel '+gain) : '0') + (food? ' / +Fame '+food : ''));
-      if (seqStatus) seqStatus.textContent='Errore! Round '+seqRound+' non completato.';
-      seqState='idle'; seqInputOpen=false; setQDisabled(true);
-      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
-    }
-  }
-
-  // ===== Reflex Tap game (v13 hardened) =====
-  const dlgReflex=document.getElementById('gReflex');
-  const startReflex=document.getElementById('startReflex');
-  const reflexArea=document.getElementById('reflexArea');
-  const rRoundEl=document.getElementById('rRound');
-  const rTimeEl=document.getElementById('rTime');
-  const rBestEl=document.getElementById('rBest');
-  const reflexBtn=document.getElementById('reflex');
-
-  if (reflexBtn && dlgReflex){
-    reflexBtn.addEventListener('click', ()=>{
-      dlgReflex.showModal();
-      // reset UI
-      if (reflexArea){ reflexArea.className='ready'; reflexArea.textContent='Pronto…'; }
-      if (rRoundEl){ rRoundEl.textContent='0'; }
-      if (rTimeEl){ rTimeEl.textContent='—'; }
-      const rb = (S.scores && S.scores.reflexBest!=null) ? S.scores.reflexBest : null;
-      if (rBestEl){ rBestEl.textContent= (rb==null?'—':String(rb)); }
-    });
-  }
-
-  let rRound=0, rBest=(S.scores && S.scores.reflexBest!=null)? S.scores.reflexBest : null, rStart=0, rState='idle', rTimeout=null;
-
-  if (startReflex){
-    startReflex.addEventListener('click', ()=> startReflexGame());
-  }
+  startReflex.onclick=()=> startReflexGame();
 
   function startReflexGame(){
     clearTimeout(rTimeout);
-    rRound=0; rStart=0; rState='waiting';
-    if (rBestEl) rBestEl.textContent= (rBest==null?'—':String(rBest));
+    rRound=0; rBest=null;
+    rBestEl.textContent='—'; rTimeEl.textContent='—'; rRoundEl.textContent='0';
     nextReflexRound();
   }
 
   function nextReflexRound(){
-    rRound++; if (rRoundEl) rRoundEl.textContent=String(rRound);
-    if (rRound>5){ return endReflexSeries(); }
-    rState='waiting';
-    if (reflexArea){ reflexArea.className='ready'; reflexArea.textContent='Attendi…'; }
+    rRound++; if (rRound>5){ endReflexSeries(); return; }
+    rRoundEl.textContent=String(rRound);
+    rState='waiting'; reflexArea.className='ready'; reflexArea.textContent='Attendi...';
     const delay = 600 + Math.random()*1800;
     rTimeout = setTimeout(()=>{
-      rState='go';
-      if (reflexArea){ reflexArea.className='go'; reflexArea.textContent='GO! TAP!'; }
+      rState='go'; reflexArea.className='go'; reflexArea.textContent='GO! TAP!';
       rStart = performance.now(); beep(800,90);
     }, delay);
   }
 
-  if (reflexArea){
-    reflexArea.addEventListener('pointerdown', (ev)=>{
-      ev.preventDefault();
-      if (rState==='waiting'){
-        // false start
-        if (reflexArea){ reflexArea.className='early'; reflexArea.textContent='Troppo presto!'; }
-        beep(200,160);
-        const penalty = 1;
-        S.ha = clamp(S.ha - penalty, 0, 100);
-        save(); render();
-        clearTimeout(rTimeout);
-        setTimeout(nextReflexRound, 700);
-      } else if (rState==='go'){
-        const t = Math.round(performance.now() - rStart);
-        rState='scored';
-        if (rTimeEl) rTimeEl.textContent = String(t);
-        rBest = (rBest==null)? t : Math.min(rBest, t);
-        if (!S.scores) S.scores = {sequenceBest:0, reflexBest:null, catchBest:0};
-        const improved = (S.scores.reflexBest==null) || (rBest < S.scores.reflexBest if S.scores.reflexBest!== null else True)
-      }
-    }, {passive:false});
-  }
+  reflexArea.addEventListener('pointerdown', (ev)=>{
+    ev.preventDefault();
+    if (rState==='waiting'){
+      // false start
+      reflexArea.className='early'; reflexArea.textContent='Troppo presto!';
+      beep(200,160);
+      // penalizza leggermente
+      S.ha = clamp(S.ha - 2, 0, 100);
+      save(); render();
+      clearTimeout(rTimeout);
+      setTimeout(nextReflexRound, 700);
+    } else if (rState==='go'){
+      const t = Math.round(performance.now() - rStart);
+      rState='scored';
+      rTimeEl.textContent = String(t);
+      rBest = (rBest==null)? t : Math.min(rBest, t);
+      rBestEl.textContent = String(rBest);
+      reflexArea.className='ready'; reflexArea.textContent = t+' ms';
+      // ricompense: veloce = più felicità, costo energia fisso
+      const gain = t<=250? 10 : t<=350? 7 : t<=500? 5 : 3;
+      S.ha = clamp(S.ha + gain, 0, 100);
+      S.e  = clamp(S.e  - 3,   0, 100);
+      save(); render();
+      beep(620,120); setTimeout(()=>beep(740,120),140);
+      setTimeout(nextReflexRound, 700);
+    } else {
+      // ignore in other states
+    }
+  }, {passive:false});
 
   function endReflexSeries(){
-    rState='idle';
-    if (reflexArea){ reflexArea.className='ready'; reflexArea.textContent = 'Serie finita! Best: ' + (rBest==null?'—':rBest+' ms'); }
+    rState='idle'; reflexArea.className='ready';
+    reflexArea.textContent = 'Serie finita! Best: ' + (rBest==null?'—':rBest+' ms');
     alert('Reflex finito! Best: ' + (rBest==null?'—':rBest+' ms'));
+  }
+
+  // ===== Sequence (Simon-like) =====
+  const dlgSeq=$('#gSequence'), startSeq=$('#startSequence'), seqStatus=$('#seqStatus'), seqRoundEl=$('#seqRound');
+  const seqBtn=$('#sequence'), seqBoard=document.getElementById('seqBoard'); const seqSymbols=$('#seqSymbols');
+  const qs = Array.from(document.querySelectorAll('#seqBoard .q'));
+  // Toggle symbols mode
+  function updateSeqMode(){
+    if(!seqBoard) return;
+    if (seqSymbols.checked){
+      seqBoard.classList.add('symbols');
+      // set distinct glyphs
+      qs[0].querySelector('span').textContent='▲';
+      qs[1].querySelector('span').textContent='◆';
+      qs[2].querySelector('span').textContent='●';
+      qs[3].querySelector('span').textContent='■';
+    } else {
+      seqBoard.classList.remove('symbols');
+      // clear or set faint squares
+      qs.forEach(q=>{ q.querySelector('span').textContent='■'; });
+    }
+  }
+  // apply on open and on toggle
+  if (seqSymbols) {
+    seqSymbols.addEventListener('change', updateSeqMode);
+    updateSeqMode();
+  }
+
+  seqBtn.onclick=()=>{ if(S.sleep){ S.sleep=false; S.sleepStart=null; save(); } dlgSeq.showModal(); };
+
+  let seqState='idle'; // 'idle' | 'playback' | 'input'
+  let seq=[], seqIdx=0, seqRound=0, seqTimer=null, seqInputOpen=false, seqLastTs=0;
+
+  startSeq.onclick=()=> startSeqGame();
+
+  function startSeqGame(){
+    clearTimeout(seqTimer);
+    seq=[]; seqRound=0; seqIdx=0; seqInputOpen=false;
+    seqStatus.textContent='Guarda la sequenza';
+    setQDisabled(true);
+    nextSeqRound();
+  }
+  function nextSeqRound(){
+    seqRound++; seqRoundEl.textContent=String(seqRound);
+    seqIdx=0; seq.push(1+Math.floor(Math.random()*4));
+    playSeq();
+  }
+  function playSeq(){
+    seqState='playback'; setQDisabled(true); seqInputOpen=false;
+    let i=0;
+    const step = () => {
+      if(i>=seq.length){
+        seqState='input'; setQDisabled(false); seqIdx=0; seqStatus.textContent='Tocca in ordine (1/'+seq.length+')';
+        setTimeout(()=>{ seqInputOpen=true; }, 80);
+        return;
+      }
+      const val=seq[i], el=qs[val-1];
+      flashQ(el); playQSound(val, seqSymbols.checked);
+      i++; seqTimer=setTimeout(step, 520);
+    }; step();
+  }
+  function setQDisabled(b){ qs.forEach(q=>q.classList.toggle('disabled', !!b)); }
+  function flashQ(el){
+    el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 220);
+  }
+  function playQSound(val, symbols){
+    if(symbols){
+      // per i simboli, facciamo una scala diversa
+      beep([330,440,554,659][val-1], 160);
+    } else {
+      beep([440,520,660,780][val-1], 160);
+    }
+  }
+  qs.forEach(el=>{
+    el.addEventListener('pointerup', (ev)=>{
+      ev.preventDefault();
+      const now=performance.now(); if(now-seqLastTs<120) return; seqLastTs=now;
+      const val=Number(el.dataset.q); handleQ(val);
+    }, {passive:false});
+  });
+  function handleQ(val){
+    if(seqState!=='input' || !seqInputOpen) return;
+    const expected = seq[seqIdx];
+    flashQ(qs[val-1]); playQSound(val, seqSymbols.checked);
+    if(val===expected){
+      seqIdx++;
+      if(seqIdx<seq.length){
+        seqStatus.textContent='Tocca in ordine ('+(seqIdx+1)+'/'+seq.length+')';
+      } else {
+        S.ha = clamp(S.ha + 6, 0, 100);
+        S.e  = clamp(S.e - 3, 0, 100);
+        save(); render();
+        seqStatus.textContent='Bravo! Prossimo round...';
+        seqState='idle'; seqInputOpen=false; setQDisabled(true);
+        setTimeout(nextSeqRound, 650);
+      }
+    } else {
+      seqStatus.textContent='Errore!';
+      seqState='idle'; seqInputOpen=false; setQDisabled(true);
+      beep(200,200,'square',0.25); setTimeout(()=>beep(160,220,'square',0.25),240);
+    }
   }
 // ===== Loop / decay / variant logic =====
   const DECAY = {h:6, ha:4, e:5, c:3};
